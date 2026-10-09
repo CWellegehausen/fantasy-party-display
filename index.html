@@ -306,7 +306,8 @@ async function loadProjections(season, week, seasonType) {
 
   const url =
     `${PROJECTION_API}/projections/nfl/${season}/${week}` +
-    `?season_type=${encodeURIComponent(seasonType || 'regular')}`;
+`?season_type=${encodeURIComponent(seasonType || 'regular')}` +
+`&order_by=pts_ppr`;
 
   try {
     const data = await get(url);
