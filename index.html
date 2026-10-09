@@ -411,7 +411,7 @@ footer {
 
 <footer>
   <span id="status">Datenquelle: Sleeper API</span>
-  <span>Automatische Aktualisierung alle 45 Sekunden</span>
+  <span>Automatische Aktualisierung alle 5 Sekunden</span>
 </footer>
 
 <script>
@@ -420,7 +420,7 @@ footer {
 
   const LEAGUE_ID = '1309297618647547904';
   const API = 'https://api.sleeper.app/v1';
-  const REFRESH_MS = 45000;
+  const REFRESH_MS = 5000;
   const EVENT_LIFETIME_MS = 180000;
   const MAX_EVENTS = 8;
 
@@ -760,7 +760,7 @@ footer {
         });
 
       $('status').textContent =
-        'Verbunden · Aktualisierung alle 45 Sekunden';
+        'Verbunden · Aktualisierung alle 5 Sekunden';
       $('status').classList.remove('error');
 
       try {
