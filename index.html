@@ -83,6 +83,129 @@ footer{width:100%;max-width:1800px;margin:10px auto 0;display:flex;justify-conte
  .scoring-list{overflow:visible}
  footer{flex-direction:column}
 }
+  
+/* Handy im Querformat und flache Displays */
+@media (max-height: 500px) and (orientation: landscape) {
+  body {
+    padding: 6px 10px;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  header {
+    margin-bottom: 6px;
+    padding-bottom: 6px;
+    gap: 8px;
+  }
+
+  .eyebrow {
+    font-size: 9px;
+  }
+
+  h1 {
+    font-size: 22px;
+    margin-top: 4px;
+  }
+
+  .sub {
+    font-size: 10px;
+    margin-top: 4px;
+  }
+
+  .week {
+    font-size: 16px;
+  }
+
+  .updated {
+    font-size: 9px;
+    margin-top: 3px;
+  }
+
+  main {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .panel {
+    padding: 6px 8px;
+    border-radius: 8px;
+  }
+
+  .matchhead,
+  .panelhead {
+    font-size: 9px;
+    margin-bottom: 3px;
+  }
+
+  .teamrow {
+    padding: 3px 0;
+    gap: 4px;
+  }
+
+  .teamname {
+    font-size: 13px;
+  }
+
+  .score {
+    font-size: 20px;
+  }
+
+  .teamstats {
+    font-size: 9px;
+    gap: 3px;
+    margin: 0 0 2px;
+  }
+
+  .teamstats strong {
+    font-size: 10px;
+  }
+
+  .versus {
+    margin: 1px 0;
+    gap: 4px;
+  }
+
+  .scoreboard {
+    grid-column: 3;
+    grid-row: 2;
+    min-height: 0;
+  }
+
+  .score-subtitle {
+    font-size: 8px;
+    margin-bottom: 3px;
+  }
+
+  .score-event {
+    padding: 3px 5px;
+    gap: 4px;
+  }
+
+  .event-name {
+    font-size: 10px;
+  }
+
+  .event-meta,
+  .event-total {
+    font-size: 8px;
+  }
+
+  .event-delta {
+    font-size: 12px;
+  }
+
+  footer {
+    margin-top: 4px;
+    font-size: 8px;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -119,8 +242,6 @@ const PROJECTION_API = 'https://api.sleeper.com';
 const REFRESH_MS = 5000;
 const EVENT_LIFETIME_MS = 180000;
 const MAX_EVENTS = 8;
-  let projectionMap = {};
-let projectionMessage = 'Projektionen werden geladen …';
 
 const $ = id => document.getElementById(id);
 const fmt = n => Number(n || 0).toLocaleString('de-DE',{
