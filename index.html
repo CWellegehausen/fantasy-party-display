@@ -464,31 +464,26 @@ function estimatedWinChance(a, b) {
   return 100 / (1 + Math.exp(-difference / spread));
 }
 
+
 function statsHtml(team, opponent, league) {
   const a = projectedTeamTotal(team, league);
   const b = projectedTeamTotal(opponent, league);
 
-  if (
-    a.found === 0 ||
-    b.found === 0 ||
-    a.missing > 0 ||
-    b.missing > 0
-  ) {
-    const foundText = a.found > 0
-      ? ` · ${a.found}/${a.starterCount} Starter`
-      : '';
+  const chance = estimatedWinChance(a.total, b.total);
 
-    return `
-      <div class="teamstats">
-        <span>
-          Prognose <strong>${a.found > 0 ? fmt(a.total) : '—'}</strong>
-          ${foundText}
-        </span>
-        <span class="unavailable">
-          ${esc(projectionMessage)}
-        </span>
-      </div>`;
-  }
+  return `
+    <div class="teamstats">
+      <span>
+        Prognose <strong>${a.found > 0 ? fmt(a.total) : '—'}</strong>
+      </span>
+      <span class="winchance">
+        Siegchance <strong>${a.found > 0 && b.found > 0
+          ? Math.round(chance) + ' %'
+          : '—'}</strong>
+      </span>
+    </div>`;
+}
+
 
   const chance = estimatedWinChance(a.total, b.total);
 
