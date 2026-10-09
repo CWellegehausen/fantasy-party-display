@@ -366,6 +366,15 @@ result[id] = {
     }
 
     projectionMap = result;
+    console.log(
+  'PROJEKTIONS-ROHDATEN:',
+  JSON.stringify(
+    Object.entries(result).slice(0, 3),
+    null,
+    2
+  )
+);
+console.log('ANZAHL IN DIESEM LAUF:', Object.keys(result).length);
 console.log('PPR-Test:', {
   spieler: Object.keys(projectionMap).length,
   beispiel: Object.entries(projectionMap)
