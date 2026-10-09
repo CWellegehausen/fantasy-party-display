@@ -401,11 +401,7 @@ result[id] = {
 function getProjection(playerId, scoringSettings) {
   const p = projectionMap[String(playerId)];
   if (!p) return null;
-
-  // Liga ist PPR: ausschließlich PPR-Projektionen verwenden.
   return p.ppr;
-}
-
 }
 
 /*
