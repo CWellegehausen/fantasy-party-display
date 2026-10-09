@@ -366,7 +366,10 @@ result[id] = {
     }
 
     projectionMap = result;
-
+console.log('PPR-Test:', {
+  spieler: Object.keys(result).length,
+  beispiel: Object.entries(result).slice(0, 5)
+});
     const usable = Object.values(result).filter(p =>
       p.ppr !== null ||
       p.half !== null ||
