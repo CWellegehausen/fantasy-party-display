@@ -362,10 +362,11 @@ async function loadProjections(season, week, seasonType) {
  * Scoring-Modus aus den Ligaeinstellungen auswählen.
  */
 
-function getProjection(playerId, scoringSettings) {
-  const p = projectionMap[String(playerId)];
-  if (!p) return null;
-  return p.ppr;
+function getProjection(p) {
+  const value = p?.stats?.pts_ppr;
+  return value != null && Number.isFinite(Number(value))
+    ? Number(value)
+    : null;
 }
 
 /*
