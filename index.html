@@ -6,406 +6,85 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
 <title>Fantasy Football · Partyraum</title>
-
 <style>
 :root {
-  --bg: #090d15;
-  --panel: #131a27;
-  --panel2: #192235;
-  --line: #29354a;
-  --muted: #a8b4c8;
-  --text: #f4f7fc;
-  --accent: #a7f36b;
-  --blue: #79b8ff;
-  --gold: #ffd36a;
-  --red: #ff9c9c;
+  --bg:#090d15; --panel:#131a27; --panel2:#192235;
+  --line:#29354a; --muted:#a8b4c8; --text:#f4f7fc;
+  --accent:#a7f36b; --blue:#79b8ff; --gold:#ffd36a; --red:#ff9c9c;
 }
-
-* { box-sizing: border-box; }
-
-html, body {
-  margin: 0;
-  width: 100%;
-  height: 100%;
-  background: var(--bg);
-  color: var(--text);
-  font-family: Arial, Helvetica, sans-serif;
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;background:var(--bg);color:var(--text);font-family:Arial,Helvetica,sans-serif}
+body{height:100vh;height:100dvh;padding:18px 24px;display:flex;flex-direction:column;overflow:hidden;background:radial-gradient(ellipse at 50% -20%,#263957 0%,var(--bg) 60%)}
+header{display:flex;align-items:center;justify-content:space-between;gap:20px;margin:0 auto 14px;width:100%;max-width:1800px;border-bottom:1px solid var(--line);padding-bottom:12px;flex-shrink:0}
+.eyebrow{text-transform:uppercase;letter-spacing:.18em;font-size:13px;font-weight:700;color:var(--accent)}
+h1{font-size:clamp(28px,3vw,46px);line-height:1;margin:7px 0 0;letter-spacing:-.04em}
+.sub{color:var(--muted);font-size:15px;margin-top:8px}
+.right{text-align:right;white-space:nowrap}
+.week{font-size:25px;font-weight:800}
+.updated{font-size:13px;color:var(--muted);margin-top:6px}
+main{width:100%;max-width:1800px;margin:0 auto;flex:1;min-height:0}
+.grid{height:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));gap:12px}
+.panel{background:linear-gradient(145deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:14px;padding:14px 18px;min-width:0;min-height:0;overflow:hidden;display:flex;flex-direction:column}
+.match{justify-content:center}
+.matchhead,.panelhead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.1em;font-weight:700;flex-shrink:0}
+.live{color:var(--accent);display:flex;align-items:center;gap:6px;white-space:nowrap}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--accent);flex-shrink:0}
+.teamrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 0}
+.teamrow + .teamrow{border-top:1px solid var(--line)}
+.teamname{font-size:clamp(16px,1.35vw,24px);font-weight:800;overflow-wrap:anywhere}
+.score{font-size:clamp(24px,2.3vw,36px);font-weight:900;font-variant-numeric:tabular-nums;letter-spacing:-.04em}
+.winner .score{color:var(--accent)}
+.teamstats{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin:-3px 0 5px;color:var(--muted);font-size:11px}
+.teamstats strong{color:var(--text);font-size:12px}
+.teamstats .winchance{color:var(--accent)}
+.teamstats .unavailable{color:var(--gold)}
+.versus{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:10px;margin:2px 0}
+.versus::before,.versus::after{content:"";height:1px;background:var(--line);flex:1}
+.empty{text-align:center;padding:24px 16px;color:var(--muted);font-size:16px}
+.scoreboard{grid-column:3;grid-row:2}
+.scoreboard .panelhead{margin-bottom:6px}
+.score-subtitle{font-size:10px;color:var(--muted);margin-bottom:8px;flex-shrink:0}
+.scoring-list{display:flex;flex-direction:column;gap:5px;min-height:0;overflow:hidden}
+.score-event{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.055);border-radius:8px;padding:7px 9px;min-width:0}
+.event-name{font-size:13px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.event-meta{font-size:10px;color:var(--muted);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.event-points{text-align:right;white-space:nowrap}
+.event-delta{color:var(--accent);font-size:16px;font-weight:900}
+.event-total{color:var(--muted);font-size:10px;margin-top:3px}
+.no-events{color:var(--muted);text-align:center;margin:auto 0;padding:12px 4px;font-size:13px;line-height:1.5}
+footer{width:100%;max-width:1800px;margin:10px auto 0;display:flex;justify-content:space-between;gap:12px;color:#73819a;font-size:11px;flex-shrink:0}
+.error{color:var(--red)}
+@media(max-height:700px){
+ body{padding:10px 18px}
+ header{margin-bottom:8px;padding-bottom:8px}
+ h1{font-size:clamp(24px,2.5vw,36px)}
+ .sub{margin-top:5px;font-size:12px}
+ .panel{padding:8px 12px}
+ .matchhead,.panelhead{margin-bottom:5px;font-size:10px}
+ .teamrow{padding:5px 0}
+ .teamname{font-size:clamp(14px,1.2vw,20px)}
+ .score{font-size:clamp(20px,2vw,30px)}
+ .teamstats{font-size:10px;margin-bottom:3px}
+ .teamstats strong{font-size:11px}
+ .score-event{padding:5px 7px}
+ .event-name{font-size:12px}
+ footer{margin-top:6px}
 }
-
-body {
-  height: 100vh;
-  height: 100dvh;
-  padding: 18px 24px;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  background: radial-gradient(
-    ellipse at 50% -20%,
-    #263957 0%,
-    var(--bg) 60%
-  );
-}
-
-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  margin: 0 auto 14px;
-  width: 100%;
-  max-width: 1800px;
-  border-bottom: 1px solid var(--line);
-  padding-bottom: 12px;
-  flex-shrink: 0;
-}
-
-.eyebrow {
-  text-transform: uppercase;
-  letter-spacing: .18em;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--accent);
-}
-
-h1 {
-  font-size: clamp(28px, 3vw, 46px);
-  line-height: 1;
-  margin: 7px 0 0;
-  letter-spacing: -.04em;
-}
-
-.sub {
-  color: var(--muted);
-  font-size: 15px;
-  margin-top: 8px;
-}
-
-.right {
-  text-align: right;
-  white-space: nowrap;
-}
-
-.week {
-  font-size: 25px;
-  font-weight: 800;
-}
-
-.updated {
-  font-size: 13px;
-  color: var(--muted);
-  margin-top: 6px;
-}
-
-main {
-  width: 100%;
-  max-width: 1800px;
-  margin: 0 auto;
-  flex: 1;
-  min-height: 0;
-}
-
-.grid {
-  height: 100%;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  grid-template-rows: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.panel {
-  background: linear-gradient(145deg, var(--panel2), var(--panel));
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  padding: 14px 18px;
-  min-width: 0;
-  min-height: 0;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-.match {
-  justify-content: center;
-}
-
-.matchhead,
-.panelhead {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 10px;
-  color: var(--muted);
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: .1em;
-  font-weight: 700;
-  flex-shrink: 0;
-}
-
-.live {
-  color: var(--accent);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  white-space: nowrap;
-}
-
-.dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--accent);
-  flex-shrink: 0;
-}
-
-.teamrow {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 10px;
-  align-items: center;
-  padding: 8px 0;
-}
-
-.teamrow + .teamrow {
-.teamstats {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  margin: -2px 0 5px;
-  color: var(--muted);
-  font-size: 11px;
-}
-
-.teamstats strong {
-  color: var(--text);
-  font-size: 12px;
-}
-
-.teamstats .winchance {
-  color: var(--accent);
-}
-  border-top: 1px solid var(--line);
-}
-
-.teamname {
-  font-size: clamp(16px, 1.35vw, 24px);
-  font-weight: 800;
-  overflow-wrap: anywhere;
-}
-
-.score {
-  font-size: clamp(24px, 2.3vw, 36px);
-  font-weight: 900;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -.04em;
-}
-
-.winner .score { color: var(--accent); }
-
-.versus {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--muted);
-  font-size: 10px;
-  margin: 2px 0;
-}
-
-.versus::before,
-.versus::after {
-  content: "";
-  height: 1px;
-  background: var(--line);
-  flex: 1;
-}
-
-.empty {
-  text-align: center;
-  padding: 24px 16px;
-  color: var(--muted);
-  font-size: 16px;
-}
-
-.scoreboard {
-  grid-column: 3;
-  grid-row: 2;
-}
-
-.scoreboard .panelhead {
-  margin-bottom: 6px;
-}
-
-.score-subtitle {
-  font-size: 10px;
-  color: var(--muted);
-  margin-bottom: 8px;
-  flex-shrink: 0;
-}
-
-.scoring-list {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  min-height: 0;
-  overflow: hidden;
-}
-
-.score-event {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 8px;
-  align-items: center;
-  background: rgba(255,255,255,.035);
-  border: 1px solid rgba(255,255,255,.055);
-  border-radius: 8px;
-  padding: 7px 9px;
-  min-width: 0;
-}
-
-.event-name {
-  font-size: 13px;
-  font-weight: 800;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.event-meta {
-  font-size: 10px;
-  color: var(--muted);
-  margin-top: 3px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.event-points {
-  text-align: right;
-  white-space: nowrap;
-}
-
-.event-delta {
-  color: var(--accent);
-  font-size: 16px;
-  font-weight: 900;
-}
-
-.event-total {
-  color: var(--muted);
-  font-size: 10px;
-  margin-top: 3px;
-}
-
-.no-events {
-  color: var(--muted);
-  text-align: center;
-  margin: auto 0;
-  padding: 12px 4px;
-  font-size: 13px;
-  line-height: 1.5;
-}
-
-footer {
-  width: 100%;
-  max-width: 1800px;
-  margin: 10px auto 0;
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  color: #73819a;
-  font-size: 11px;
-  flex-shrink: 0;
-}
-
-.error { color: var(--red); }
-
-@media (max-height: 700px) {
-  body { padding: 10px 18px; }
-
-  header {
-    margin-bottom: 8px;
-    padding-bottom: 8px;
-  }
-
-  h1 { font-size: clamp(24px, 2.5vw, 36px); }
-
-  .sub {
-    margin-top: 5px;
-    font-size: 12px;
-  }
-
-  .panel { padding: 8px 12px; }
-
-  .matchhead,
-  .panelhead {
-    margin-bottom: 5px;
-    font-size: 10px;
-  }
-
-  .teamrow { padding: 5px 0; }
-
-  .teamname { font-size: clamp(14px, 1.2vw, 20px); }
-
-  .score { font-size: clamp(20px, 2vw, 30px); }
-
-  .score-event { padding: 5px 7px; }
-
-  .event-name { font-size: 12px; }
-
-  footer { margin-top: 6px; }
-}
-
-@media (max-width: 700px) {
-  body {
-    padding: 12px;
-    overflow: auto;
-    height: auto;
-    min-height: 100vh;
-  }
-
-  header {
-    align-items: flex-start;
-    gap: 10px;
-  }
-
-  h1 { font-size: 26px; }
-
-  .eyebrow { font-size: 10px; }
-
-  .sub { font-size: 12px; }
-
-  .week { font-size: 18px; }
-
-  .updated { font-size: 10px; }
-
-  main { flex: none; }
-
-  .grid {
-    height: auto;
-    grid-template-columns: 1fr;
-    grid-template-rows: auto;
-  }
-
-  .panel { min-height: 150px; }
-
-  .teamname { font-size: 20px; }
-
-  .score { font-size: 30px; }
-
-  .scoreboard {
-    grid-column: auto;
-    grid-row: auto;
-    min-height: 250px;
-  }
-
-  .scoring-list { overflow: visible; }
-
-  footer { flex-direction: column; }
+@media(max-width:700px){
+ body{padding:12px;overflow:auto;height:auto;min-height:100vh}
+ header{align-items:flex-start;gap:10px}
+ h1{font-size:26px}.eyebrow{font-size:10px}.sub{font-size:12px}
+ .week{font-size:18px}.updated{font-size:10px}
+ main{flex:none}
+ .grid{height:auto;grid-template-columns:1fr;grid-template-rows:auto}
+ .panel{min-height:150px}
+ .teamname{font-size:20px}.score{font-size:30px}
+ .scoreboard{grid-column:auto;grid-row:auto;min-height:250px}
+ .scoring-list{overflow:visible}
+ footer{flex-direction:column}
 }
 </style>
 </head>
-
 <body>
 <header>
   <div>
@@ -413,7 +92,6 @@ footer {
     <h1>LEAGUE MATCHUPS</h1>
     <div class="sub" id="leagueName">Punkte live aus eurer Liga</div>
   </div>
-
   <div class="right">
     <div class="week" id="weekLabel">WEEK —</div>
     <div class="updated" id="updated">Verbinde mit Sleeper …</div>
@@ -433,419 +111,397 @@ footer {
 
 <script>
 (() => {
-  'use strict';
+'use strict';
 
-  const LEAGUE_ID = '1309297618647547904';
-  const API = 'https://api.sleeper.app/v1';
-  const REFRESH_MS = 5000;
-  const EVENT_LIFETIME_MS = 180000;
-  const MAX_EVENTS = 8;
- function estimatedWinChance(a, b) {
-    // Näherungsmodell, keine offizielle Sleeper-Wahrscheinlichkeit.
-    const difference = a - b;
-    return 100 / (1 + Math.exp(-difference / 12));
+const LEAGUE_ID = '1309297618647547904';
+const API = 'https://api.sleeper.app/v1';
+const PROJECTION_API = 'https://api.sleeper.com';
+const REFRESH_MS = 5000;
+const EVENT_LIFETIME_MS = 180000;
+const MAX_EVENTS = 8;
+
+const $ = id => document.getElementById(id);
+const fmt = n => Number(n || 0).toLocaleString('de-DE',{
+  minimumFractionDigits:2,maximumFractionDigits:2
+});
+
+let refreshing = false;
+let playerDirectoryPromise = null;
+let previousPlayerPoints = null;
+let scoringEvents = [];
+let lastWeek = null;
+let projectionMap = {};
+let projectionKey = '';
+let projectionMessage = 'Projektionen werden geladen …';
+
+async function get(url) {
+  const response = await fetch(url,{cache:'no-store'});
+  if (!response.ok) throw new Error('API antwortet mit '+response.status);
+  return response.json();
+}
+
+function managerName(user) {
+  return user?.metadata?.team_name || user?.display_name ||
+    user?.username || 'Team';
+}
+
+function esc(value) {
+  return String(value ?? '').replace(/[&<>"']/g,c=>({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  })[c]);
+}
+
+function getPoints(team) {
+  return Number(team.custom_points ?? team.points ?? 0);
+}
+
+/*
+ * Projektionen werden nur einmal je Saison/Woche abgerufen.
+ * Sleeper liefert üblicherweise ein Objekt mit Spieler-IDs als Schlüsseln,
+ * die Funktion unterstützt aber auch ein Array.
+ */
+async function loadProjections(season,week,seasonType) {
+  const key = `${season}-${week}-${seasonType}`;
+  if (key === projectionKey && Object.keys(projectionMap).length) return;
+  projectionKey = key;
+  projectionMap = {};
+  projectionMessage = 'Projektionen werden geladen …';
+
+  const url = `${PROJECTION_API}/projections/nfl/${season}/${week}`+
+    `?season_type=${encodeURIComponent(seasonType || 'regular')}`;
+
+  try {
+    const data = await get(url);
+    const rows = Array.isArray(data)
+      ? data.map(item=>[String(item.player_id ?? item.player?.player_id ?? ''),item])
+      : Object.entries(data || {});
+
+    const result = {};
+    for (const [rawId,item] of rows) {
+      const id = String(item?.player_id ?? item?.player?.player_id ?? rawId);
+      if (!id || id === 'undefined') continue;
+
+      const stats = item?.stats || item?.projection || item || {};
+      const ppr = Number(stats.pts_ppr);
+      const half = Number(stats.pts_half_ppr);
+      const standard = Number(stats.pts_std);
+
+      result[id] = {
+        ppr: Number.isFinite(ppr) ? ppr : null,
+        half: Number.isFinite(half) ? half : null,
+        standard: Number.isFinite(standard) ? standard : null
+      };
+    }
+
+    projectionMap = result;
+    const usable = Object.values(result).filter(p =>
+      p.ppr !== null || p.half !== null || p.standard !== null
+    ).length;
+
+    projectionMessage = usable
+      ? `Projektionen geladen (${usable} Spieler)`
+      : 'Sleeper lieferte keine verwertbaren Projektionen';
+  } catch (error) {
+    projectionMessage = 'Projektionen nicht verfügbar';
+    console.warn('Projektionen konnten nicht geladen werden:',error);
+  }
+}
+
+function getProjection(playerId,scoringSettings) {
+  const p = projectionMap[String(playerId)];
+  if (!p) return null;
+
+  const rec = Number(scoringSettings?.rec ?? 0);
+  if (rec >= 0.75) return p.ppr ?? p.half ?? p.standard;
+  if (rec >= 0.25) return p.half ?? p.ppr ?? p.standard;
+  return p.standard ?? p.half ?? p.ppr;
+}
+
+/*
+ * Endprognose = aktuelle Team-Punkte plus die noch nicht erzielten
+ * Punkte aus den Gesamtspiel-Projektionen der Starter.
+ * Fehlende Projektionen werden ausdrücklich nicht als echte 0 gewertet.
+ */
+function projectedTeamTotal(team,league) {
+  const current = getPoints(team);
+  const actual = team.players_points || {};
+  const starters = team.starters || [];
+  const settings = league?.scoring_settings || {};
+  let remaining = 0;
+  let found = 0;
+  let missing = 0;
+
+  for (const id of starters) {
+    // NFL-Defenses haben IDs wie "PHI"; diese können ebenfalls Projektionen haben.
+    const projection = getProjection(id,settings);
+    if (projection === null || !Number.isFinite(projection)) {
+      missing++;
+      continue;
+    }
+
+    const scored = Number(actual[id] ?? 0);
+    remaining += Math.max(0,projection - scored);
+    found++;
   }
 
-  function statsHtml(team, opponent, league) {
-    const projection = projectedTeamTotal(team, league);
-    const opponentProjection = projectedTeamTotal(opponent, league);
-    const chance = estimatedWinChance(projection, opponentProjection);
+  return {
+    total: current + remaining,
+    current,
+    found,
+    missing,
+    starterCount: starters.length
+  };
+}
 
+/*
+ * Ein einfaches Schätzmodell, keine offizielle Sleeper-Wahrscheinlichkeit.
+ * 12 Punkte ist eine grobe Streuung für den Vergleich der projizierten Endstände.
+ */
+function estimatedWinChance(a,b) {
+  return 100 / (1 + Math.exp(-(a-b)/12));
+}
+
+function statsHtml(team,opponent,league) {
+  const a = projectedTeamTotal(team,league);
+  const b = projectedTeamTotal(opponent,league);
+
+  if (a.found === 0 || b.found === 0) {
     return `
       <div class="teamstats">
-        <span>Prognose <strong>${fmt(projection)}</strong></span>
-        <span class="winchance">
-          Siegchance <strong>${Math.round(chance)} %</strong>
-        </span>
-      </div>
-    `;
+        <span>Prognose <strong>—</strong></span>
+        <span class="unavailable">${esc(projectionMessage)}</span>
+      </div>`;
   }
-  const $ = id => document.getElementById(id);
 
-  let refreshing = false;
-  let playerDirectoryPromise = null;
-  let previousPlayerPoints = null;
-  let scoringEvents = [];
-  let lastWeek = null;
+  const chance = estimatedWinChance(a.total,b.total);
+  const completeness = a.missing
+    ? ` · ${a.found}/${a.starterCount} Starter`
+    : '';
 
-  const fmt = n => Number(n || 0).toLocaleString('de-DE', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
+  return `
+    <div class="teamstats">
+      <span>Prognose <strong>${fmt(a.total)}</strong>${completeness}</span>
+      <span class="winchance">Siegchance <strong>${Math.round(chance)} %</strong></span>
+    </div>`;
+}
+
+function renderMatchups(matches,names,week,league) {
+  $('leagueName').textContent = league?.name || 'Eure Fantasy Football Liga';
+  $('weekLabel').textContent = 'WEEK '+week;
+
+  const byMatch = new Map();
+  for (const matchup of matches) {
+    if (matchup.matchup_id == null) continue;
+    if (!byMatch.has(matchup.matchup_id)) byMatch.set(matchup.matchup_id,[]);
+    byMatch.get(matchup.matchup_id).push(matchup);
+  }
+
+  const games = [...byMatch.values()]
+    .filter(pair=>pair.length===2)
+    .sort((a,b)=>
+      Math.min(...a.map(t=>t.roster_id))-Math.min(...b.map(t=>t.roster_id))
+    );
+
+  const cards = games.slice(0,5).map((pair,index)=>{
+    const [a,b] = [...pair].sort((x,y)=>getPoints(y)-getPoints(x));
+    const ap = getPoints(a), bp = getPoints(b);
+    const started = ap>0 || bp>0;
+
+    return `
+      <article class="panel match">
+        <div class="matchhead">
+          <span>Matchup ${String(index+1).padStart(2,'0')}</span>
+          <span class="live"><i class="dot"></i>${started?'PUNKTESTAND':'AUSSTEHEND'}</span>
+        </div>
+        <div class="teamrow ${ap>bp?'winner':''}">
+          <div class="teamname">${esc(names[a.roster_id]||'Team '+a.roster_id)}</div>
+          <div class="score">${fmt(ap)}</div>
+        </div>
+        ${statsHtml(a,b,league)}
+        <div class="versus">VS</div>
+        <div class="teamrow ${bp>ap?'winner':''}">
+          <div class="teamname">${esc(names[b.roster_id]||'Team '+b.roster_id)}</div>
+          <div class="score">${fmt(bp)}</div>
+        </div>
+        ${statsHtml(b,a,league)}
+      </article>`;
   });
 
-  async function get(path) {
-    const response = await fetch(API + path, {
-      cache: 'no-store'
-    });
-
-    if (!response.ok) {
-      throw new Error('Sleeper API antwortet mit ' + response.status);
-    }
-
-    return response.json();
+  while (cards.length<5) {
+    cards.push(`<article class="panel match"><div class="empty">${
+      games.length===0?'Noch keine Matchups gefunden.':'Keine weitere Begegnung.'
+    }</div></article>`);
   }
 
-  function managerName(user) {
-    return user?.metadata?.team_name
-      || user?.display_name
-      || user?.username
-      || 'Team';
-  }
-
-  function esc(value) {
-    return String(value ?? '').replace(/[&<>"']/g, character => ({
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;',
-      "'": '&#39;'
-    })[character]);
-  }
-
-  function getPoints(team) {
-    return Number(team.custom_points ?? team.points ?? 0);
-  }
-
-function renderMatchups(matches, names, week, league) {
-  $('leagueName').textContent =
-      league?.name || 'Eure Fantasy Football Liga';
-
-    $('weekLabel').textContent = 'WEEK ' + week;
-
-    const byMatch = new Map();
-
-    for (const matchup of matches) {
-      if (matchup.matchup_id == null) continue;
-
-      if (!byMatch.has(matchup.matchup_id)) {
-        byMatch.set(matchup.matchup_id, []);
-      }
-
-      byMatch.get(matchup.matchup_id).push(matchup);
-    }
-
-    // Nur vollständige Begegnungen anzeigen; 0:0 zählt ebenfalls.
-    const games = [...byMatch.values()]
-      .filter(pair => pair.length === 2)
-      .sort((a, b) =>
-        Math.min(...a.map(team => team.roster_id))
-        - Math.min(...b.map(team => team.roster_id))
-      );
-
-    const cards = games.slice(0, 5).map((pair, index) => {
-      const sorted = [...pair].sort((a, b) =>
-        getPoints(b) - getPoints(a)
-      );
-
-      const [a, b] = sorted;
-      const ap = getPoints(a);
-      const bp = getPoints(b);
-      const started = ap > 0 || bp > 0;
-      const aWin = ap > bp;
-      const bWin = bp > ap;
-
-      return `
-        <article class="panel match">
-          <div class="matchhead">
-            <span>Matchup ${String(index + 1).padStart(2, '0')}</span>
-            <span class="live">
-              <i class="dot"></i>
-              ${started ? 'PUNKTESTAND' : 'AUSSTEHEND'}
-            </span>
-          </div>
-
-          <div class="teamrow ${aWin ? 'winner' : ''}">
-            <div class="teamname">
-              ${esc(names[a.roster_id] || 'Team ' + a.roster_id)}
-            </div>
-            <div class="score">${fmt(ap)}</div>
-          </div>
-${statsHtml(a, b, league)}
-          <div class="versus">VS</div>
-
-          <div class="teamrow ${bWin ? 'winner' : ''}">
-            <div class="teamname">
-              ${esc(names[b.roster_id] || 'Team ' + b.roster_id)}
-            </div>
-            <div class="score">${fmt(bp)}</div>
-          </div>
-          ${statsHtml(b, a, league)}
-        </article>
-      `;
-    });
-
-    while (cards.length < 5) {
-      cards.push(`
-        <article class="panel match">
-          <div class="empty">
-            ${games.length === 0
-              ? 'Noch keine Matchups gefunden.'
-              : 'Keine weitere Begegnung.'}
-          </div>
-        </article>
-      `);
-    }
-
-    cards.push(`
-      <section class="panel scoreboard">
-        <div class="panelhead">
-          <span>⚡ Live Scoring</span>
-          <span class="live"><i class="dot"></i> LIVE</span>
-        </div>
-        <div class="score-subtitle">
-          Punkteanstieg seit der letzten Abfrage · letzte 3 Minuten
-        </div>
-        <div class="scoring-list" id="scoringList">
-          <div class="no-events">Warte auf neue Punkte …</div>
-        </div>
-      </section>
-    `);
-
-    $('matchups').innerHTML = cards.join('');
-    renderScoring();
-  }
-
-  // Spielerinformationen werden einmalig geladen und wiederverwendet.
-  async function getPlayerDirectory() {
-    if (!playerDirectoryPromise) {
-      playerDirectoryPromise = get('/players/nfl').then(data => {
-        const directory = {};
-
-        for (const [id, player] of Object.entries(data || {})) {
-          directory[id] = {
-            name: player.full_name
-              || [player.first_name, player.last_name]
-                .filter(Boolean).join(' ')
-              || 'Unbekannter Spieler',
-            team: player.team || 'FA',
-            position: player.position || ''
-          };
-        }
-
-        return directory;
-      }).catch(error => {
-        playerDirectoryPromise = null;
-        throw error;
-      });
-    }
-
-    return playerDirectoryPromise;
-  }
-
-  function collectPlayerPoints(matches) {
-    const points = {};
-
-    for (const matchup of matches) {
-      const rosterPoints = matchup.players_points || {};
-
-      for (const [playerId, rawPoints] of Object.entries(rosterPoints)) {
-        const value = Number(rawPoints);
-
-        if (!Number.isFinite(value)) continue;
-
-        // Bei doppelten Einträgen den höchsten gefundenen Wert behalten.
-        points[playerId] = Math.max(points[playerId] ?? -Infinity, value);
-      }
-    }
-
-    return points;
-  }
-
-  async function updateScoring(matches, names) {
-    const current = collectPlayerPoints(matches);
-    const now = Date.now();
-
-    // Beim ersten Abruf einen Ausgangswert setzen, nicht alte Punkte
-    // fälschlich als gerade erzielte Punkte anzeigen.
-    if (previousPlayerPoints === null || lastWeek !== $('weekLabel').textContent) {
-      previousPlayerPoints = current;
-      lastWeek = $('weekLabel').textContent;
-      renderScoring();
-      return;
-    }
-
-    const changes = [];
-
-    for (const [playerId, total] of Object.entries(current)) {
-      const oldTotal = previousPlayerPoints[playerId];
-
-      // Neue Spielerwerte ohne bekannten vorherigen Stand dienen
-      // nicht als sicherer Nachweis eines gerade erzielten Scores.
-      if (oldTotal === undefined) continue;
-
-      const delta = total - oldTotal;
-
-      if (delta > 0.001) {
-        changes.push({ playerId, delta, total, time: now });
-      }
-    }
-
-    previousPlayerPoints = current;
-
-    if (changes.length) {
-      try {
-        const directory = await getPlayerDirectory();
-
-        for (const change of changes) {
-          const player = directory[change.playerId] || {
-            name: 'Spieler ' + change.playerId,
-            team: '—',
-            position: ''
-          };
-
-          scoringEvents.push({
-            ...change,
-            name: player.name,
-            nflTeam: player.team,
-            position: player.position
-          });
-        }
-
-        scoringEvents.sort((a, b) => b.time - a.time);
-        scoringEvents = scoringEvents.slice(0, MAX_EVENTS);
-      } catch (error) {
-        console.warn('Spielernamen konnten nicht geladen werden:', error);
-        // Die Matchup-Anzeige bleibt unabhängig davon funktionsfähig.
-      }
-    }
-
-    scoringEvents = scoringEvents.filter(
-      event => now - event.time < EVENT_LIFETIME_MS
-    );
-
-    renderScoring();
-  }
-
-  function renderScoring() {
-    const list = $('scoringList');
-    if (!list) return;
-
-    const now = Date.now();
-
-    scoringEvents = scoringEvents.filter(
-      event => now - event.time < EVENT_LIFETIME_MS
-    );
-
-    if (!scoringEvents.length) {
-      list.innerHTML = `
-        <div class="no-events">
-          Noch keine neuen Punkte erkannt.<br>
-          Neue Punktesteigerungen erscheinen hier.
-        </div>
-      `;
-      return;
-    }
-
-    list.innerHTML = scoringEvents.slice(0, MAX_EVENTS).map(event => `
-      <div class="score-event">
-        <div>
-          <div class="event-name">${esc(event.name)}</div>
-          <div class="event-meta">
-            ${esc(event.nflTeam)}${event.position
-              ? ' · ' + esc(event.position) : ''}
-          </div>
-        </div>
-        <div class="event-points">
-          <div class="event-delta">+${fmt(event.delta)}</div>
-          <div class="event-total">${fmt(event.total)} Pkt.</div>
-        </div>
+  cards.push(`
+    <section class="panel scoreboard">
+      <div class="panelhead">
+        <span>⚡ Live Scoring</span>
+        <span class="live"><i class="dot"></i> LIVE</span>
       </div>
-    `).join('');
+      <div class="score-subtitle">Punkteanstieg seit der letzten Abfrage · letzte 3 Minuten</div>
+      <div class="scoring-list" id="scoringList">
+        <div class="no-events">Warte auf neue Punkte …</div>
+      </div>
+    </section>`);
+
+  $('matchups').innerHTML = cards.join('');
+  renderScoring();
+}
+
+async function getPlayerDirectory() {
+  if (!playerDirectoryPromise) {
+    playerDirectoryPromise = get(API+'/players/nfl').then(data=>{
+      const directory = {};
+      for (const [id,p] of Object.entries(data||{})) {
+        directory[id] = {
+          name:p.full_name || [p.first_name,p.last_name].filter(Boolean).join(' ') || 'Unbekannter Spieler',
+          team:p.team || 'FA',
+          position:p.position || ''
+        };
+      }
+      return directory;
+    }).catch(error=>{
+      playerDirectoryPromise=null;
+      throw error;
+    });
+  }
+  return playerDirectoryPromise;
+}
+
+function collectPlayerPoints(matches) {
+  const points={};
+  for (const matchup of matches) {
+    for (const [id,raw] of Object.entries(matchup.players_points||{})) {
+      const value=Number(raw);
+      if (Number.isFinite(value)) points[id]=Math.max(points[id]??-Infinity,value);
+    }
+  }
+  return points;
+}
+
+async function updateScoring(matches,week) {
+  const current=collectPlayerPoints(matches);
+  const now=Date.now();
+
+  if (previousPlayerPoints===null || lastWeek!==week) {
+    previousPlayerPoints=current;
+    lastWeek=week;
+    renderScoring();
+    return;
   }
 
-  async function refresh() {
-    if (refreshing) return;
-    refreshing = true;
+  const changes=[];
+  for (const [id,total] of Object.entries(current)) {
+    const old=previousPlayerPoints[id];
+    if (old===undefined) continue;
+    const delta=total-old;
+    if (delta>0.001) changes.push({playerId:id,delta,total,time:now});
+  }
+  previousPlayerPoints=current;
+
+  if (changes.length) {
+    try {
+      const directory=await getPlayerDirectory();
+      for (const change of changes) {
+        const player=directory[change.playerId]||{
+          name:'Spieler '+change.playerId,team:'—',position:''
+        };
+        scoringEvents.push({
+          ...change,name:player.name,nflTeam:player.team,position:player.position
+        });
+      }
+      scoringEvents.sort((a,b)=>b.time-a.time);
+      scoringEvents=scoringEvents.slice(0,MAX_EVENTS);
+    } catch(error) {
+      console.warn('Spielernamen konnten nicht geladen werden:',error);
+    }
+  }
+
+  scoringEvents=scoringEvents.filter(e=>now-e.time<EVENT_LIFETIME_MS);
+  renderScoring();
+}
+
+function renderScoring() {
+  const list=$('scoringList');
+  if (!list) return;
+
+  const now=Date.now();
+  scoringEvents=scoringEvents.filter(e=>now-e.time<EVENT_LIFETIME_MS);
+
+  if (!scoringEvents.length) {
+    list.innerHTML=`<div class="no-events">Noch keine neuen Punkte erkannt.<br>Neue Punktesteigerungen erscheinen hier.</div>`;
+    return;
+  }
+
+  list.innerHTML=scoringEvents.slice(0,MAX_EVENTS).map(e=>`
+    <div class="score-event">
+      <div>
+        <div class="event-name">${esc(e.name)}</div>
+        <div class="event-meta">${esc(e.nflTeam)}${e.position?' · '+esc(e.position):''}</div>
+      </div>
+      <div class="event-points">
+        <div class="event-delta">+${fmt(e.delta)}</div>
+        <div class="event-total">${fmt(e.total)} Pkt.</div>
+      </div>
+    </div>`).join('');
+}
+
+async function refresh() {
+  if (refreshing) return;
+  refreshing=true;
+
+  try {
+    const [league,state,users,rosters]=await Promise.all([
+      get(API+'/league/'+LEAGUE_ID),
+      get(API+'/state/nfl'),
+      get(API+'/league/'+LEAGUE_ID+'/users'),
+      get(API+'/league/'+LEAGUE_ID+'/rosters')
+    ]);
+
+    if (!league) throw new Error('Liga nicht gefunden.');
+
+    const week=Number(state.display_week||state.week||1);
+    const season=Number(league.season||state.league_season||state.season);
+    const seasonType=league.season_type||state.season_type||'regular';
+
+    // Projektionen nur laden, wenn Saison/Woche gewechselt haben.
+    await loadProjections(season,week,seasonType);
+
+    const matches=await get(API+'/league/'+LEAGUE_ID+'/matchups/'+week);
+    const userById=Object.fromEntries(users.map(u=>[u.user_id,u]));
+    const names={};
+
+    for (const roster of rosters) {
+      names[roster.roster_id]=managerName(userById[roster.owner_id]);
+    }
+
+    const safeMatches=Array.isArray(matches)?matches:[];
+    renderMatchups(safeMatches,names,week,league);
+
+    $('updated').textContent='Aktualisiert: '+new Date().toLocaleTimeString('de-DE',{
+      hour:'2-digit',minute:'2-digit',second:'2-digit'
+    });
+    $('status').textContent='Verbunden · Aktualisierung alle 5 Sekunden · '+projectionMessage;
+    $('status').classList.remove('error');
 
     try {
-      const [league, state, users, rosters] = await Promise.all([
-        get('/league/' + LEAGUE_ID),
-        get('/state/nfl'),
-        get('/league/' + LEAGUE_ID + '/users'),
-        get('/league/' + LEAGUE_ID + '/rosters')
-      ]);
-
-      if (!league) throw new Error('Liga nicht gefunden.');
-
-      const week = Number(state.display_week || state.week || 1);
-      const season = Number(league.season || state.season);
-try {
-  projectionMap = await getProjections(season, week);
-} catch (error) {
-  console.warn('Projektionen konnten nicht geladen werden:', error);
-  projectionMap = {};
-}
-      const matches = await get(
-        '/league/' + LEAGUE_ID + '/matchups/' + week
-      );
-
-      const userById = Object.fromEntries(
-        users.map(user => [user.user_id, user])
-      );
-
-      const names = {};
-
-      for (const roster of rosters) {
-        const user = userById[roster.owner_id];
-        names[roster.roster_id] = managerName(user);
-      }
-
-      const safeMatches = Array.isArray(matches) ? matches : [];
-
-      // Die Matchups werden zuerst dargestellt. Ein Fehler beim
-      // Live-Scoring darf sie nicht ausblenden.
-      renderMatchups(safeMatches, names, week, league);
-
-      $('updated').textContent = 'Aktualisiert: ' +
-        new Date().toLocaleTimeString('de-DE', {
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit'
-        });
-
-      $('status').textContent =
-        'Verbunden · Aktualisierung alle 5 Sekunden';
-      $('status').classList.remove('error');
-
-      try {
-        await updateScoring(safeMatches, names);
-      } catch (error) {
-        console.warn('Live-Scoring konnte nicht aktualisiert werden:', error);
-        const list = $('scoringList');
-
-        if (list && !scoringEvents.length) {
-          list.innerHTML = `
-            <div class="no-events">
-              Live-Scoring derzeit nicht verfügbar.<br>
-              Die Matchups werden weiter aktualisiert.
-            </div>
-          `;
-        }
-      }
-    } catch (error) {
-      console.error('Aktualisierung fehlgeschlagen:', error);
-
-      $('updated').textContent = 'Aktualisierung fehlgeschlagen';
-      $('status').textContent =
-        error.message + ' · Internetverbindung prüfen.';
-      $('status').classList.add('error');
-
-      // Bereits angezeigte Ergebnisse bleiben stehen, wenn ein
-      // späterer Abruf vorübergehend fehlschlägt.
-      if (!$('matchups').children.length) {
-        $('matchups').innerHTML = `
-          <div class="empty">
-            Sleeper-Daten konnten nicht geladen werden.
-          </div>
-        `;
-      }
-    } finally {
-      refreshing = false;
+      await updateScoring(safeMatches,week);
+    } catch(error) {
+      console.warn('Live-Scoring konnte nicht aktualisiert werden:',error);
     }
+  } catch(error) {
+    console.error('Aktualisierung fehlgeschlagen:',error);
+    $('updated').textContent='Aktualisierung fehlgeschlagen';
+    $('status').textContent=error.message+' · Internetverbindung prüfen.';
+    $('status').classList.add('error');
+  } finally {
+    refreshing=false;
   }
+}
 
-  refresh();
-  setInterval(refresh, REFRESH_MS);
+refresh();
+setInterval(refresh,REFRESH_MS);
 })();
 </script>
 </body>
