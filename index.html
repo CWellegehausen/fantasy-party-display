@@ -168,6 +168,23 @@ main {
 }
 
 .teamrow + .teamrow {
+ .teamstats {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  color: var(--muted);
+  font-size: 11px;
+  margin: -2px 0 5px;
+}
+
+.teamstats strong {
+  color: var(--text);
+  font-size: 12px;
+}
+
+.teamstats .winchance {
+  color: var(--accent);
+}
   border-top: 1px solid var(--line);
 }
 
