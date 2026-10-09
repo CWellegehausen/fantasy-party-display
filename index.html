@@ -35,7 +35,7 @@ main{max-width:1500px;margin:auto}.grid{display:grid;grid-template-columns:repea
     $('weekLabel').textContent = 'WEEK '+week;
     const byMatch = new Map();
     for(const m of matches){if(m.matchup_id == null)continue;if(!byMatch.has(m.matchup_id))byMatch.set(m.matchup_id,[]);byMatch.get(m.matchup_id).push(m)}
-    const games = [...byMatch.values()].filter(pair=>pair.length===2 && pair.some(t=>Number(t.custom_points ?? t.points ?? 0)>0));
+const games = [...byMatch.values()].filter(pair=>pair.length===2);
     games.sort((a,b)=>Math.min(...a.map(t=>t.roster_id))-Math.min(...b.map(t=>t.roster_id)));
     if(!games.length){$('matchups').innerHTML='<div class="empty">Für Week '+week+' gibt es noch keine Matchups mit erzielten Punkten.<br><small>Diese Anzeige aktualisiert sich automatisch.</small></div>';return}
     $('matchups').innerHTML=games.map((pair,i)=>{
