@@ -168,13 +168,13 @@ main {
 }
 
 .teamrow + .teamrow {
- .teamstats {
+.teamstats {
   display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  margin: -2px 0 5px;
   color: var(--muted);
   font-size: 11px;
-  margin: -2px 0 5px;
 }
 
 .teamstats strong {
@@ -440,7 +440,26 @@ footer {
   const REFRESH_MS = 5000;
   const EVENT_LIFETIME_MS = 180000;
   const MAX_EVENTS = 8;
+ function estimatedWinChance(a, b) {
+    // Näherungsmodell, keine offizielle Sleeper-Wahrscheinlichkeit.
+    const difference = a - b;
+    return 100 / (1 + Math.exp(-difference / 12));
+  }
 
+  function statsHtml(team, opponent, league) {
+    const projection = projectedTeamTotal(team, league);
+    const opponentProjection = projectedTeamTotal(opponent, league);
+    const chance = estimatedWinChance(projection, opponentProjection);
+
+    return `
+      <div class="teamstats">
+        <span>Prognose <strong>${fmt(projection)}</strong></span>
+        <span class="winchance">
+          Siegchance <strong>${Math.round(chance)} %</strong>
+        </span>
+      </div>
+    `;
+  }
   const $ = id => document.getElementById(id);
 
   let refreshing = false;
@@ -487,8 +506,8 @@ footer {
     return Number(team.custom_points ?? team.points ?? 0);
   }
 
-  function renderMatchups(matches, names, week, league) {
-    $('leagueName').textContent =
+function renderMatchups(matches, names, week, league) {
+  $('leagueName').textContent =
       league?.name || 'Eure Fantasy Football Liga';
 
     $('weekLabel').textContent = 'WEEK ' + week;
@@ -541,7 +560,7 @@ footer {
             </div>
             <div class="score">${fmt(ap)}</div>
           </div>
-
+${statsHtml(a, b, league)}
           <div class="versus">VS</div>
 
           <div class="teamrow ${bWin ? 'winner' : ''}">
@@ -550,6 +569,7 @@ footer {
             </div>
             <div class="score">${fmt(bp)}</div>
           </div>
+          ${statsHtml(b, a, league)}
         </article>
       `;
     });
@@ -748,6 +768,13 @@ footer {
       if (!league) throw new Error('Liga nicht gefunden.');
 
       const week = Number(state.display_week || state.week || 1);
+      const season = Number(league.season || state.season);
+try {
+  projectionMap = await getProjections(season, week);
+} catch (error) {
+  console.warn('Projektionen konnten nicht geladen werden:', error);
+  projectionMap = {};
+}
       const matches = await get(
         '/league/' + LEAGUE_ID + '/matchups/' + week
       );
