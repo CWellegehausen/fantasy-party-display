@@ -464,7 +464,6 @@ function estimatedWinChance(a, b) {
   return 100 / (1 + Math.exp(-difference / spread));
 }
 
-
 function statsHtml(team, opponent, league) {
   const a = projectedTeamTotal(team, league);
   const b = projectedTeamTotal(opponent, league);
@@ -480,20 +479,6 @@ function statsHtml(team, opponent, league) {
         Siegchance <strong>${a.found > 0 && b.found > 0
           ? Math.round(chance) + ' %'
           : '—'}</strong>
-      </span>
-    </div>`;
-}
-
-
-  const chance = estimatedWinChance(a.total, b.total);
-
-  return `
-    <div class="teamstats">
-      <span>
-        Prognose <strong>${fmt(a.total)}</strong>
-      </span>
-      <span class="winchance">
-        Siegchance <strong>${Math.round(chance)} %</strong>
       </span>
     </div>`;
 }
