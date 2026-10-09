@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Fantasy Football · Partyraum</title>
+<style>
+:root{--bg:#090d15;--panel:#131a27;--panel2:#192235;--line:#29354a;--muted:#a8b4c8;--text:#f4f7fc;--accent:#a7f36b;--blue:#79b8ff;--gold:#ffd36a}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:Arial,Helvetica,sans-serif}body{padding:clamp(18px,3vw,46px);background:radial-gradient(ellipse at 50% -20%,#263957 0%,var(--bg) 60%)}
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin:0 auto 30px;max-width:1500px;border-bottom:1px solid var(--line);padding-bottom:22px}.eyebrow{text-transform:uppercase;letter-spacing:.22em;font-size:clamp(12px,1vw,17px);font-weight:700;color:var(--accent)}h1{font-size:clamp(32px,4.6vw,68px);line-height:1;margin:10px 0 0;letter-spacing:-.04em}.sub{color:var(--muted);font-size:clamp(13px,1.25vw,18px);margin-top:12px}.right{text-align:right;white-space:nowrap}.week{font-size:clamp(19px,2.2vw,32px);font-weight:800}.updated{font-size:clamp(12px,1vw,15px);color:var(--muted);margin-top:8px}
+main{max-width:1500px;margin:auto}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.match{background:linear-gradient(145deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:18px;padding:clamp(18px,2vw,30px);box-shadow:0 10px 35px #0003;min-width:0}.matchhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;color:var(--muted);font-size:clamp(11px,.95vw,14px);text-transform:uppercase;letter-spacing:.14em;font-weight:700}.live{color:var(--accent);display:flex;align-items:center;gap:8px}.dot{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 12px #a7f36b88}.teamrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:center;padding:12px 0}.teamrow+ .teamrow{border-top:1px solid var(--line)}.teamname{font-size:clamp(18px,2.05vw,31px);font-weight:800;overflow-wrap:anywhere}.score{font-size:clamp(27px,3.1vw,46px);font-weight:900;font-variant-numeric:tabular-nums;letter-spacing:-.04em}.winner .score{color:var(--accent)}.versus{display:flex;align-items:center;gap:14px;color:var(--muted);font-size:12px;margin:4px 0 4px}.versus:before,.versus:after{content:"";height:1px;background:var(--line);flex:1}.empty{grid-column:1/-1;text-align:center;padding:70px 20px;border:1px dashed var(--line);border-radius:18px;color:var(--muted);font-size:clamp(18px,2vw,28px)}footer{max-width:1500px;margin:28px auto 0;display:flex;justify-content:space-between;gap:20px;color:#73819a;font-size:12px}.error{color:#ff9c9c}.hidden{display:none}
+@media(max-width:800px){.grid{grid-template-columns:1fr}header{align-items:flex-start;flex-direction:column}.right{text-align:left}footer{flex-direction:column}}
+@media(min-width:1500px){.grid{gap:22px}.match{padding:30px}}
+</style>
+</head>
+<body>
+<header>
+  <div><div class="eyebrow">Sleeper · Fantasy Football</div><h1>LEAGUE MATCHUPS</h1><div class="sub" id="leagueName">Punkte live aus eurer Liga</div></div>
+  <div class="right"><div class="week" id="weekLabel">WEEK —</div><div class="updated" id="updated">Verbinde mit Sleeper …</div></div>
+</header>
+<main><div class="grid" id="matchups"><div class="empty">Lade aktuelle Punktestände …</div></div></main>
+<footer><span id="status">Datenquelle: Sleeper API</span><span>Automatische Aktualisierung alle 60 Sekunden</span></footer>
+<script>
+(() => {
+  const LEAGUE_ID = '1309297618647547904';
+  const API = 'https://api.sleeper.app/v1';
+  const REFRESH_MS = 45000;
+  const $ = id => document.getElementById(id);
+  const fmt = n => Number(n || 0).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2});
+  async function get(path){const r=await fetch(API+path,{cache:'no-store'});if(!r.ok)throw new Error('Sleeper API antwortet mit '+r.status);return r.json()}
+  function managerName(user){return user?.metadata?.team_name || user?.display_name || user?.username || 'Team'}
+  function render(matches, names, week, league){
+    $('leagueName').textContent = league?.name || 'Eure Fantasy Football Liga';
+    $('weekLabel').textContent = 'WEEK '+week;
+    const byMatch = new Map();
+    for(const m of matches){if(m.matchup_id == null)continue;if(!byMatch.has(m.matchup_id))byMatch.set(m.matchup_id,[]);byMatch.get(m.matchup_id).push(m)}
+    const games = [...byMatch.values()].filter(pair=>pair.length===2 && pair.some(t=>Number(t.custom_points ?? t.points ?? 0)>0));
+    games.sort((a,b)=>Math.min(...a.map(t=>t.roster_id))-Math.min(...b.map(t=>t.roster_id)));
+    if(!games.length){$('matchups').innerHTML='<div class="empty">Für Week '+week+' gibt es noch keine Matchups mit erzielten Punkten.<br><small>Diese Anzeige aktualisiert sich automatisch.</small></div>';return}
+    $('matchups').innerHTML=games.map((pair,i)=>{
+      pair.sort((a,b)=>Number(b.custom_points ?? b.points ?? 0)-Number(a.custom_points ?? a.points ?? 0));
+      const [a,b]=pair;const ap=Number(a.custom_points ?? a.points ?? 0),bp=Number(b.custom_points ?? b.points ?? 0);
+      const started = ap>0 || bp>0; const aWin=ap>bp,bWin=bp>ap;
+      return `<article class="match"><div class="matchhead"><span>Matchup ${String(i+1).padStart(2,'0')}</span><span class="live"><i class="dot"></i>${started?'PUNKTESTAND':'AUSSTEHEND'}</span></div><div class="teamrow ${aWin?'winner':''}"><div class="teamname">${esc(names[a.roster_id]||'Team '+a.roster_id)}</div><div class="score">${fmt(ap)}</div></div><div class="versus">VS</div><div class="teamrow ${bWin?'winner':''}"><div class="teamname">${esc(names[b.roster_id]||'Team '+b.roster_id)}</div><div class="score">${fmt(bp)}</div></div></article>`;
+    }).join('');
+  }
+  function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+  async function refresh(){
+    try{
+      const [league,state,users,rosters]=await Promise.all([
+        get('/league/'+LEAGUE_ID),get('/state/nfl'),get('/league/'+LEAGUE_ID+'/users'),get('/league/'+LEAGUE_ID+'/rosters')
+      ]);
+      if(!league)throw new Error('Liga nicht gefunden.');
+      const week=Number(state.display_week || state.week || 1);
+      const matches=await get('/league/'+LEAGUE_ID+'/matchups/'+week);
+      const userById=Object.fromEntries(users.map(u=>[u.user_id,u]));
+      const names={};
+      for(const roster of rosters){const u=userById[roster.owner_id];names[roster.roster_id]=managerName(u)}
+      render(Array.isArray(matches)?matches:[],names,week,league);
+      $('updated').textContent='Aktualisiert: '+new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+      $('status').textContent='Verbunden · Aktualisierung alle 60 Sekunden';
+      $('status').classList.remove('error');
+    }catch(e){$('updated').textContent='Verbindung fehlgeschlagen';$('status').textContent=e.message+' · Bitte Internetverbindung prüfen.';$('status').classList.add('error');$('matchups').innerHTML='<div class="empty">Sleeper-Daten konnten nicht geladen werden.<br><small>Bitte Internetverbindung prüfen und Seite neu laden.</small></div>';}
+  }
+  refresh();setInterval(refresh,REFRESH_MS);
+})();
+</script>
+</body>
+</html>
