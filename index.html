@@ -296,106 +296,65 @@ function getPoints(team) {
 async function loadProjections(season, week, seasonType) {
   const key = `${season}-${week}-${seasonType}`;
 
-  if (key === projectionKey && Object.keys(projectionMap).length) {
-    return;
-  }
+  if (key === projectionKey && Object.keys(projectionMap).length) return;
 
   projectionKey = key;
   projectionMap = {};
   projectionMessage = 'Projektionen werden geladen …';
 
-  
-const url =
-  `${PROJECTION_API}/projections/nfl/${season}/${week}` +
-  `?season_type=${encodeURIComponent(seasonType || 'regular')}`;
+  const url =
+    `${PROJECTION_API}/projections/nfl/${season}/${week}` +
+    `?season_type=${encodeURIComponent(seasonType || 'regular')}`;
 
-try {
-  const data = await get(url);
+  try {
+    const data = await get(url);
 
+    const rows = Array.isArray(data)
+      ? data.map((item, index) => [
+          String(item?.player_id ?? item?.player?.player_id ?? index),
+          item
+        ])
+      : Object.entries(data || {});
+
+    const result = {};
 
     for (const [rawId, item] of rows) {
-      const id = String(
-        item?.player_id ??
-        item?.player?.player_id ??
-        rawId
-      );
-
+      const id = String(item?.player_id ?? item?.player?.player_id ?? rawId);
       if (!id || id === 'undefined') continue;
 
-      const stats =
-        item?.stats ??
-        item?.projection ??
-        item ??
-        {};
+      const stats = item?.stats ?? item?.projection ?? item ?? {};
 
       function readNumber(...values) {
         for (const value of values) {
-          if (value === null || value === undefined || value === '') {
-            continue;
-          }
-
+          if (value === null || value === undefined || value === '') continue;
           const number = Number(value);
           if (Number.isFinite(number)) return number;
         }
         return null;
       }
 
-    
-result[id] = {
-  ppr: readNumber(stats.pts_ppr),
-  half: readNumber(stats.pts_half_ppr),
-  standard: readNumber(stats.pts_std),
-  raw: stats
-};
-
-
-      // Originalwerte zusätzlich behalten, falls nötig.
-      result[id].raw = stats;
+      result[id] = {
+        ppr: readNumber(stats.pts_ppr),
+        half: readNumber(stats.pts_half_ppr),
+        standard: readNumber(stats.pts_std),
+        raw: stats
+      };
     }
 
     projectionMap = result;
-    console.log(
-  'PROJEKTIONS-ROHDATEN:',
-      console.log('ERSTER EINTRAG:', Object.values(result)[0]);
-  JSON.stringify(
-    Object.entries(result).slice(0, 3),
-    null,
-    2
-  )
-);
-console.log('ANZAHL IN DIESEM LAUF:', Object.keys(result).length);
-console.log('PPR-Test:', {
-  spieler: Object.keys(projectionMap).length,
-  beispiel: Object.entries(projectionMap)
-    .slice(0, 15)
-    .map(([id, p]) => ({
-      id,
-      ppr: p.ppr,
-      raw: p.raw
-    }))
-});
-    const usable = Object.values(result).filter(p =>
-      p.ppr !== null ||
-      p.half !== null ||
-      p.standard !== null
+
+    const usable = Object.values(result).filter(
+      p => p.ppr !== null || p.half !== null || p.standard !== null
     ).length;
 
     projectionMessage = usable
       ? `Projektionen geladen (${usable} Spieler)`
-      : 'Keine verwertbaren Projektionen von Sleeper';
+      : 'Keine verwertbaren Punkteprojektionen gefunden';
 
-    console.info(
-      'Sleeper-Projektionen:',
-      usable,
-      'Spieler; Saison:',
-      season,
-      'Woche:',
-      week
-    );
+    console.info('Sleeper-Projektionen:', usable, 'Spieler; Saison:', season, 'Woche:', week);
   } catch (error) {
-    projectionMap = {};
-    projectionMessage = 'Projektionen nicht verfügbar';
-    console.warn('Projektionen konnten nicht geladen werden:', error);
+    console.error('Fehler beim Laden der Projektionen:', error);
+    projectionMessage = 'Projektionen konnten nicht geladen werden';
   }
 }
 
