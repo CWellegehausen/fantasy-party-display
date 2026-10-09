@@ -431,8 +431,7 @@ footer {
 
     // Alle vollständigen Matchups anzeigen,
     // auch wenn beide Teams noch 0 Punkte haben.
-    const games = [...byMatch.values()].filter(
-      pair => pair.length === 2
+const games = [...byMatch.values()].filter(pair=>pair.length===2);
     );
 
     games.sort((a, b) =>
