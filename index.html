@@ -119,6 +119,8 @@ const PROJECTION_API = 'https://api.sleeper.com';
 const REFRESH_MS = 5000;
 const EVENT_LIFETIME_MS = 180000;
 const MAX_EVENTS = 8;
+  let projectionMap = {};
+let projectionMessage = 'Projektionen werden geladen …';
 
 const $ = id => document.getElementById(id);
 const fmt = n => Number(n || 0).toLocaleString('de-DE',{
