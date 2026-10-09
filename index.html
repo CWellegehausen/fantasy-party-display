@@ -304,27 +304,14 @@ async function loadProjections(season, week, seasonType) {
   projectionMap = {};
   projectionMessage = 'Projektionen werden geladen …';
 
-  const url =
-    `${PROJECTION_API}/projections/nfl/${season}/${week}` +
-`?season_type=${encodeURIComponent(seasonType || 'regular')}` +
-`&order_by=pts_ppr`;
+  
+const url =
+  `${PROJECTION_API}/projections/nfl/${season}/${week}` +
+  `?season_type=${encodeURIComponent(seasonType || 'regular')}`;
 
-  try {
-    const data = await get(url);
+try {
+  const data = await get(url);
 
-    const rows = Array.isArray(data)
-      ? data.map((item, index) => [
-          String(
-            item.player_id ??
-            item.player?.player_id ??
-            item.player_id ??
-            index
-          ),
-          item
-        ])
-      : Object.entries(data || {});
-
-    const result = {};
 
     for (const [rawId, item] of rows) {
       const id = String(
