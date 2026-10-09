@@ -233,6 +233,8 @@ footer{width:100%;max-width:1800px;margin:10px auto 0;display:flex;justify-conte
 </footer>
 
 <script>
+
+<script>
 (() => {
 'use strict';
 
@@ -244,8 +246,10 @@ const EVENT_LIFETIME_MS = 180000;
 const MAX_EVENTS = 8;
 
 const $ = id => document.getElementById(id);
-const fmt = n => Number(n || 0).toLocaleString('de-DE',{
-  minimumFractionDigits:2,maximumFractionDigits:2
+
+const fmt = n => Number(n || 0).toLocaleString('de-DE', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2
 });
 
 let refreshing = false;
@@ -253,24 +257,33 @@ let playerDirectoryPromise = null;
 let previousPlayerPoints = null;
 let scoringEvents = [];
 let lastWeek = null;
+
 let projectionMap = {};
 let projectionKey = '';
 let projectionMessage = 'Projektionen werden geladen …';
 
 async function get(url) {
-  const response = await fetch(url,{cache:'no-store'});
-  if (!response.ok) throw new Error('API antwortet mit '+response.status);
+  const response = await fetch(url, { cache: 'no-store' });
+  if (!response.ok) {
+    throw new Error('API antwortet mit ' + response.status);
+  }
   return response.json();
 }
 
 function managerName(user) {
-  return user?.metadata?.team_name || user?.display_name ||
-    user?.username || 'Team';
+  return user?.metadata?.team_name ||
+    user?.display_name ||
+    user?.username ||
+    'Team';
 }
 
 function esc(value) {
-  return String(value ?? '').replace(/[&<>"']/g,c=>({
-    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  return String(value ?? '').replace(/[&<>"']/g, c => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
   })[c]);
 }
 
@@ -279,91 +292,164 @@ function getPoints(team) {
 }
 
 /*
- * Projektionen werden nur einmal je Saison/Woche abgerufen.
- * Sleeper liefert üblicherweise ein Objekt mit Spieler-IDs als Schlüsseln,
- * die Funktion unterstützt aber auch ein Array.
+ * Projektionen von Sleeper laden.
+ * Die Antwort kann je nach API-Antwort als Array oder Objekt kommen.
  */
-async function loadProjections(season,week,seasonType) {
+async function loadProjections(season, week, seasonType) {
   const key = `${season}-${week}-${seasonType}`;
-  if (key === projectionKey && Object.keys(projectionMap).length) return;
+
+  if (key === projectionKey && Object.keys(projectionMap).length) {
+    return;
+  }
+
   projectionKey = key;
   projectionMap = {};
   projectionMessage = 'Projektionen werden geladen …';
 
-  const url = `${PROJECTION_API}/projections/nfl/${season}/${week}`+
+  const url =
+    `${PROJECTION_API}/projections/nfl/${season}/${week}` +
     `?season_type=${encodeURIComponent(seasonType || 'regular')}`;
 
   try {
     const data = await get(url);
+
     const rows = Array.isArray(data)
-      ? data.map(item=>[String(item.player_id ?? item.player?.player_id ?? ''),item])
+      ? data.map((item, index) => [
+          String(
+            item.player_id ??
+            item.player?.player_id ??
+            item.player_id ??
+            index
+          ),
+          item
+        ])
       : Object.entries(data || {});
 
     const result = {};
-    for (const [rawId,item] of rows) {
-      const id = String(item?.player_id ?? item?.player?.player_id ?? rawId);
+
+    for (const [rawId, item] of rows) {
+      const id = String(
+        item?.player_id ??
+        item?.player?.player_id ??
+        rawId
+      );
+
       if (!id || id === 'undefined') continue;
 
-      const stats = item?.stats || item?.projection || item || {};
-      const ppr = Number(stats.pts_ppr);
-      const half = Number(stats.pts_half_ppr);
-      const standard = Number(stats.pts_std);
+      const stats =
+        item?.stats ??
+        item?.projection ??
+        item ??
+        {};
+
+      function readNumber(...values) {
+        for (const value of values) {
+          if (value === null || value === undefined || value === '') {
+            continue;
+          }
+
+          const number = Number(value);
+          if (Number.isFinite(number)) return number;
+        }
+        return null;
+      }
 
       result[id] = {
-        ppr: Number.isFinite(ppr) ? ppr : null,
-        half: Number.isFinite(half) ? half : null,
-        standard: Number.isFinite(standard) ? standard : null
+        ppr: readNumber(
+          stats.pts_ppr,
+          stats.pts_half_ppr,
+          stats.pts_std
+        ),
+        half: readNumber(
+          stats.pts_half_ppr,
+          stats.pts_ppr,
+          stats.pts_std
+        ),
+        standard: readNumber(
+          stats.pts_std,
+          stats.pts_half_ppr,
+          stats.pts_ppr
+        )
       };
+
+      // Originalwerte zusätzlich behalten, falls nötig.
+      result[id].raw = stats;
     }
 
     projectionMap = result;
+
     const usable = Object.values(result).filter(p =>
-      p.ppr !== null || p.half !== null || p.standard !== null
+      p.ppr !== null ||
+      p.half !== null ||
+      p.standard !== null
     ).length;
 
     projectionMessage = usable
       ? `Projektionen geladen (${usable} Spieler)`
-      : 'Sleeper lieferte keine verwertbaren Projektionen';
+      : 'Keine verwertbaren Projektionen von Sleeper';
+
+    console.info(
+      'Sleeper-Projektionen:',
+      usable,
+      'Spieler; Saison:',
+      season,
+      'Woche:',
+      week
+    );
   } catch (error) {
+    projectionMap = {};
     projectionMessage = 'Projektionen nicht verfügbar';
-    console.warn('Projektionen konnten nicht geladen werden:',error);
+    console.warn('Projektionen konnten nicht geladen werden:', error);
   }
 }
 
-function getProjection(playerId,scoringSettings) {
+/*
+ * Scoring-Modus aus den Ligaeinstellungen auswählen.
+ */
+function getProjection(playerId, scoringSettings) {
   const p = projectionMap[String(playerId)];
   if (!p) return null;
 
   const rec = Number(scoringSettings?.rec ?? 0);
-  if (rec >= 0.75) return p.ppr ?? p.half ?? p.standard;
-  if (rec >= 0.25) return p.half ?? p.ppr ?? p.standard;
-  return p.standard ?? p.half ?? p.ppr;
+
+  if (rec >= 0.75) return p.ppr;
+  if (rec >= 0.25) return p.half;
+
+  return p.standard;
 }
 
 /*
- * Endprognose = aktuelle Team-Punkte plus die noch nicht erzielten
- * Punkte aus den Gesamtspiel-Projektionen der Starter.
- * Fehlende Projektionen werden ausdrücklich nicht als echte 0 gewertet.
+ * Team-Endprognose:
+ * aktuelle Punkte plus noch erwartete Punkte der Starter.
+ *
+ * Nicht verfügbare Projektionen werden nicht als null Punkte
+ * ausgegeben. Die Vollständigkeit wird separat angezeigt.
  */
-function projectedTeamTotal(team,league) {
+function projectedTeamTotal(team, league) {
   const current = getPoints(team);
   const actual = team.players_points || {};
-  const starters = team.starters || [];
+  const starters = (team.starters || []).filter(
+    id => id !== null && id !== undefined && id !== ''
+  );
+
   const settings = league?.scoring_settings || {};
+
   let remaining = 0;
   let found = 0;
   let missing = 0;
 
   for (const id of starters) {
-    // NFL-Defenses haben IDs wie "PHI"; diese können ebenfalls Projektionen haben.
-    const projection = getProjection(id,settings);
+    const projection = getProjection(id, settings);
+
     if (projection === null || !Number.isFinite(projection)) {
       missing++;
       continue;
     }
 
     const scored = Number(actual[id] ?? 0);
-    remaining += Math.max(0,projection - scored);
+
+    // Bereits erzielte Punkte nicht ein zweites Mal addieren.
+    remaining += Math.max(0, projection - scored);
     found++;
   }
 
@@ -377,83 +463,130 @@ function projectedTeamTotal(team,league) {
 }
 
 /*
- * Ein einfaches Schätzmodell, keine offizielle Sleeper-Wahrscheinlichkeit.
- * 12 Punkte ist eine grobe Streuung für den Vergleich der projizierten Endstände.
+ * Geschätzte Siegchance.
+ * Dies ist keine offizielle Sleeper-Berechnung.
  */
-function estimatedWinChance(a,b) {
-  return 100 / (1 + Math.exp(-(a-b)/12));
+function estimatedWinChance(a, b) {
+  const difference = a - b;
+  const spread = 12;
+
+  return 100 / (1 + Math.exp(-difference / spread));
 }
 
-function statsHtml(team,opponent,league) {
-  const a = projectedTeamTotal(team,league);
-  const b = projectedTeamTotal(opponent,league);
+function statsHtml(team, opponent, league) {
+  const a = projectedTeamTotal(team, league);
+  const b = projectedTeamTotal(opponent, league);
 
-  if (a.found === 0 || b.found === 0) {
+  if (
+    a.found === 0 ||
+    b.found === 0 ||
+    a.missing > 0 ||
+    b.missing > 0
+  ) {
+    const foundText = a.found > 0
+      ? ` · ${a.found}/${a.starterCount} Starter`
+      : '';
+
     return `
       <div class="teamstats">
-        <span>Prognose <strong>—</strong></span>
-        <span class="unavailable">${esc(projectionMessage)}</span>
+        <span>
+          Prognose <strong>${a.found > 0 ? fmt(a.total) : '—'}</strong>
+          ${foundText}
+        </span>
+        <span class="unavailable">
+          ${esc(projectionMessage)}
+        </span>
       </div>`;
   }
 
-  const chance = estimatedWinChance(a.total,b.total);
-  const completeness = a.missing
-    ? ` · ${a.found}/${a.starterCount} Starter`
-    : '';
+  const chance = estimatedWinChance(a.total, b.total);
 
   return `
     <div class="teamstats">
-      <span>Prognose <strong>${fmt(a.total)}</strong>${completeness}</span>
-      <span class="winchance">Siegchance <strong>${Math.round(chance)} %</strong></span>
+      <span>
+        Prognose <strong>${fmt(a.total)}</strong>
+      </span>
+      <span class="winchance">
+        Siegchance <strong>${Math.round(chance)} %</strong>
+      </span>
     </div>`;
 }
 
-function renderMatchups(matches,names,week,league) {
-  $('leagueName').textContent = league?.name || 'Eure Fantasy Football Liga';
-  $('weekLabel').textContent = 'WEEK '+week;
+function renderMatchups(matches, names, week, league) {
+  $('leagueName').textContent =
+    league?.name || 'Eure Fantasy Football Liga';
+
+  $('weekLabel').textContent = 'WEEK ' + week;
 
   const byMatch = new Map();
+
   for (const matchup of matches) {
     if (matchup.matchup_id == null) continue;
-    if (!byMatch.has(matchup.matchup_id)) byMatch.set(matchup.matchup_id,[]);
+
+    if (!byMatch.has(matchup.matchup_id)) {
+      byMatch.set(matchup.matchup_id, []);
+    }
+
     byMatch.get(matchup.matchup_id).push(matchup);
   }
 
   const games = [...byMatch.values()]
-    .filter(pair=>pair.length===2)
-    .sort((a,b)=>
-      Math.min(...a.map(t=>t.roster_id))-Math.min(...b.map(t=>t.roster_id))
+    .filter(pair => pair.length === 2)
+    .sort((a, b) =>
+      Math.min(...a.map(t => t.roster_id)) -
+      Math.min(...b.map(t => t.roster_id))
     );
 
-  const cards = games.slice(0,5).map((pair,index)=>{
-    const [a,b] = [...pair].sort((x,y)=>getPoints(y)-getPoints(x));
-    const ap = getPoints(a), bp = getPoints(b);
-    const started = ap>0 || bp>0;
+  const cards = games.slice(0, 5).map((pair, index) => {
+    const [a, b] = [...pair].sort(
+      (x, y) => getPoints(y) - getPoints(x)
+    );
+
+    const ap = getPoints(a);
+    const bp = getPoints(b);
+    const started = ap > 0 || bp > 0;
 
     return `
       <article class="panel match">
         <div class="matchhead">
-          <span>Matchup ${String(index+1).padStart(2,'0')}</span>
-          <span class="live"><i class="dot"></i>${started?'PUNKTESTAND':'AUSSTEHEND'}</span>
+          <span>Matchup ${String(index + 1).padStart(2, '0')}</span>
+          <span class="live">
+            <i class="dot"></i>
+            ${started ? 'PUNKTESTAND' : 'AUSSTEHEND'}
+          </span>
         </div>
-        <div class="teamrow ${ap>bp?'winner':''}">
-          <div class="teamname">${esc(names[a.roster_id]||'Team '+a.roster_id)}</div>
+
+        <div class="teamrow ${ap > bp ? 'winner' : ''}">
+          <div class="teamname">
+            ${esc(names[a.roster_id] || 'Team ' + a.roster_id)}
+          </div>
           <div class="score">${fmt(ap)}</div>
         </div>
-        ${statsHtml(a,b,league)}
+
+        ${statsHtml(a, b, league)}
+
         <div class="versus">VS</div>
-        <div class="teamrow ${bp>ap?'winner':''}">
-          <div class="teamname">${esc(names[b.roster_id]||'Team '+b.roster_id)}</div>
+
+        <div class="teamrow ${bp > ap ? 'winner' : ''}">
+          <div class="teamname">
+            ${esc(names[b.roster_id] || 'Team ' + b.roster_id)}
+          </div>
           <div class="score">${fmt(bp)}</div>
         </div>
-        ${statsHtml(b,a,league)}
+
+        ${statsHtml(b, a, league)}
       </article>`;
   });
 
-  while (cards.length<5) {
-    cards.push(`<article class="panel match"><div class="empty">${
-      games.length===0?'Noch keine Matchups gefunden.':'Keine weitere Begegnung.'
-    }</div></article>`);
+  while (cards.length < 5) {
+    cards.push(`
+      <article class="panel match">
+        <div class="empty">
+          ${games.length === 0
+            ? 'Noch keine Matchups gefunden.'
+            : 'Keine weitere Begegnung.'}
+        </div>
+      </article>`);
   }
 
   cards.push(`
@@ -462,7 +595,9 @@ function renderMatchups(matches,names,week,league) {
         <span>⚡ Live Scoring</span>
         <span class="live"><i class="dot"></i> LIVE</span>
       </div>
-      <div class="score-subtitle">Punkteanstieg seit der letzten Abfrage · letzte 3 Minuten</div>
+      <div class="score-subtitle">
+        Punkteanstieg seit der letzten Abfrage · letzte 3 Minuten
+      </div>
       <div class="scoring-list" id="scoringList">
         <div class="no-events">Warte auf neue Punkte …</div>
       </div>
@@ -474,158 +609,239 @@ function renderMatchups(matches,names,week,league) {
 
 async function getPlayerDirectory() {
   if (!playerDirectoryPromise) {
-    playerDirectoryPromise = get(API+'/players/nfl').then(data=>{
-      const directory = {};
-      for (const [id,p] of Object.entries(data||{})) {
-        directory[id] = {
-          name:p.full_name || [p.first_name,p.last_name].filter(Boolean).join(' ') || 'Unbekannter Spieler',
-          team:p.team || 'FA',
-          position:p.position || ''
-        };
-      }
-      return directory;
-    }).catch(error=>{
-      playerDirectoryPromise=null;
-      throw error;
-    });
+    playerDirectoryPromise = get(API + '/players/nfl')
+      .then(data => {
+        const directory = {};
+
+        for (const [id, p] of Object.entries(data || {})) {
+          directory[id] = {
+            name: p.full_name ||
+              [p.first_name, p.last_name].filter(Boolean).join(' ') ||
+              'Unbekannter Spieler',
+            team: p.team || 'FA',
+            position: p.position || ''
+          };
+        }
+
+        return directory;
+      })
+      .catch(error => {
+        playerDirectoryPromise = null;
+        throw error;
+      });
   }
+
   return playerDirectoryPromise;
 }
 
 function collectPlayerPoints(matches) {
-  const points={};
+  const points = {};
+
   for (const matchup of matches) {
-    for (const [id,raw] of Object.entries(matchup.players_points||{})) {
-      const value=Number(raw);
-      if (Number.isFinite(value)) points[id]=Math.max(points[id]??-Infinity,value);
+    for (const [id, raw] of Object.entries(
+      matchup.players_points || {}
+    )) {
+      const value = Number(raw);
+
+      if (Number.isFinite(value)) {
+        points[id] = Math.max(
+          points[id] ?? -Infinity,
+          value
+        );
+      }
     }
   }
+
   return points;
 }
 
-async function updateScoring(matches,week) {
-  const current=collectPlayerPoints(matches);
-  const now=Date.now();
+async function updateScoring(matches, week) {
+  const current = collectPlayerPoints(matches);
+  const now = Date.now();
 
-  if (previousPlayerPoints===null || lastWeek!==week) {
-    previousPlayerPoints=current;
-    lastWeek=week;
+  if (previousPlayerPoints === null || lastWeek !== week) {
+    previousPlayerPoints = current;
+    lastWeek = week;
     renderScoring();
     return;
   }
 
-  const changes=[];
-  for (const [id,total] of Object.entries(current)) {
-    const old=previousPlayerPoints[id];
-    if (old===undefined) continue;
-    const delta=total-old;
-    if (delta>0.001) changes.push({playerId:id,delta,total,time:now});
-  }
-  previousPlayerPoints=current;
+  const changes = [];
 
-  if (changes.length) {
-    try {
-      const directory=await getPlayerDirectory();
-      for (const change of changes) {
-        const player=directory[change.playerId]||{
-          name:'Spieler '+change.playerId,team:'—',position:''
-        };
-        scoringEvents.push({
-          ...change,name:player.name,nflTeam:player.team,position:player.position
-        });
-      }
-      scoringEvents.sort((a,b)=>b.time-a.time);
-      scoringEvents=scoringEvents.slice(0,MAX_EVENTS);
-    } catch(error) {
-      console.warn('Spielernamen konnten nicht geladen werden:',error);
+  for (const [id, total] of Object.entries(current)) {
+    const old = previousPlayerPoints[id];
+    if (old === undefined) continue;
+
+    const delta = total - old;
+
+    if (delta > 0.001) {
+      changes.push({
+        playerId: id,
+        delta,
+        total,
+        time: now
+      });
     }
   }
 
-  scoringEvents=scoringEvents.filter(e=>now-e.time<EVENT_LIFETIME_MS);
+  previousPlayerPoints = current;
+
+  if (changes.length) {
+    try {
+      const directory = await getPlayerDirectory();
+
+      for (const change of changes) {
+        const player = directory[change.playerId] || {
+          name: 'Spieler ' + change.playerId,
+          team: '—',
+          position: ''
+        };
+
+        scoringEvents.push({
+          ...change,
+          name: player.name,
+          nflTeam: player.team,
+          position: player.position
+        });
+      }
+
+      scoringEvents.sort((a, b) => b.time - a.time);
+      scoringEvents = scoringEvents.slice(0, MAX_EVENTS);
+    } catch (error) {
+      console.warn(
+        'Spielernamen konnten nicht geladen werden:',
+        error
+      );
+    }
+  }
+
+  scoringEvents = scoringEvents.filter(
+    e => now - e.time < EVENT_LIFETIME_MS
+  );
+
   renderScoring();
 }
 
 function renderScoring() {
-  const list=$('scoringList');
+  const list = $('scoringList');
   if (!list) return;
 
-  const now=Date.now();
-  scoringEvents=scoringEvents.filter(e=>now-e.time<EVENT_LIFETIME_MS);
+  const now = Date.now();
+
+  scoringEvents = scoringEvents.filter(
+    e => now - e.time < EVENT_LIFETIME_MS
+  );
 
   if (!scoringEvents.length) {
-    list.innerHTML=`<div class="no-events">Noch keine neuen Punkte erkannt.<br>Neue Punktesteigerungen erscheinen hier.</div>`;
+    list.innerHTML = `
+      <div class="no-events">
+        Noch keine neuen Punkte erkannt.<br>
+        Neue Punktesteigerungen erscheinen hier.
+      </div>`;
     return;
   }
 
-  list.innerHTML=scoringEvents.slice(0,MAX_EVENTS).map(e=>`
-    <div class="score-event">
-      <div>
-        <div class="event-name">${esc(e.name)}</div>
-        <div class="event-meta">${esc(e.nflTeam)}${e.position?' · '+esc(e.position):''}</div>
-      </div>
-      <div class="event-points">
-        <div class="event-delta">+${fmt(e.delta)}</div>
-        <div class="event-total">${fmt(e.total)} Pkt.</div>
-      </div>
-    </div>`).join('');
+  list.innerHTML = scoringEvents
+    .slice(0, MAX_EVENTS)
+    .map(e => `
+      <div class="score-event">
+        <div>
+          <div class="event-name">${esc(e.name)}</div>
+          <div class="event-meta">
+            ${esc(e.nflTeam)}${e.position ? ' · ' + esc(e.position) : ''}
+          </div>
+        </div>
+        <div class="event-points">
+          <div class="event-delta">+${fmt(e.delta)}</div>
+          <div class="event-total">${fmt(e.total)} Pkt.</div>
+        </div>
+      </div>`)
+    .join('');
 }
 
 async function refresh() {
   if (refreshing) return;
-  refreshing=true;
+  refreshing = true;
 
   try {
-    const [league,state,users,rosters]=await Promise.all([
-      get(API+'/league/'+LEAGUE_ID),
-      get(API+'/state/nfl'),
-      get(API+'/league/'+LEAGUE_ID+'/users'),
-      get(API+'/league/'+LEAGUE_ID+'/rosters')
+    const [league, state, users, rosters] = await Promise.all([
+      get(API + '/league/' + LEAGUE_ID),
+      get(API + '/state/nfl'),
+      get(API + '/league/' + LEAGUE_ID + '/users'),
+      get(API + '/league/' + LEAGUE_ID + '/rosters')
     ]);
 
     if (!league) throw new Error('Liga nicht gefunden.');
 
-    const week=Number(state.display_week||state.week||1);
-    const season=Number(league.season||state.league_season||state.season);
-    const seasonType=league.season_type||state.season_type||'regular';
+    const week = Number(state.display_week || state.week || 1);
+    const season = Number(
+      league.season || state.league_season || state.season
+    );
+    const seasonType =
+      league.season_type || state.season_type || 'regular';
 
-    // Projektionen nur laden, wenn Saison/Woche gewechselt haben.
-    await loadProjections(season,week,seasonType);
+    await loadProjections(season, week, seasonType);
 
-    const matches=await get(API+'/league/'+LEAGUE_ID+'/matchups/'+week);
-    const userById=Object.fromEntries(users.map(u=>[u.user_id,u]));
-    const names={};
+    const matches = await get(
+      API + '/league/' + LEAGUE_ID + '/matchups/' + week
+    );
+
+    const userById = Object.fromEntries(
+      users.map(u => [u.user_id, u])
+    );
+
+    const names = {};
 
     for (const roster of rosters) {
-      names[roster.roster_id]=managerName(userById[roster.owner_id]);
+      names[roster.roster_id] =
+        managerName(userById[roster.owner_id]);
     }
 
-    const safeMatches=Array.isArray(matches)?matches:[];
-    renderMatchups(safeMatches,names,week,league);
+    const safeMatches = Array.isArray(matches) ? matches : [];
 
-    $('updated').textContent='Aktualisiert: '+new Date().toLocaleTimeString('de-DE',{
-      hour:'2-digit',minute:'2-digit',second:'2-digit'
-    });
-    $('status').textContent='Verbunden · Aktualisierung alle 5 Sekunden · '+projectionMessage;
+    renderMatchups(safeMatches, names, week, league);
+
+    $('updated').textContent =
+      'Aktualisiert: ' +
+      new Date().toLocaleTimeString('de-DE', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+
+    $('status').textContent =
+      'Verbunden · Aktualisierung alle 5 Sekunden · ' +
+      projectionMessage;
+
     $('status').classList.remove('error');
 
     try {
-      await updateScoring(safeMatches,week);
-    } catch(error) {
-      console.warn('Live-Scoring konnte nicht aktualisiert werden:',error);
+      await updateScoring(safeMatches, week);
+    } catch (error) {
+      console.warn(
+        'Live-Scoring konnte nicht aktualisiert werden:',
+        error
+      );
     }
-  } catch(error) {
-    console.error('Aktualisierung fehlgeschlagen:',error);
-    $('updated').textContent='Aktualisierung fehlgeschlagen';
-    $('status').textContent=error.message+' · Internetverbindung prüfen.';
+  } catch (error) {
+    console.error('Aktualisierung fehlgeschlagen:', error);
+
+    $('updated').textContent = 'Aktualisierung fehlgeschlagen';
+    $('status').textContent =
+      error.message + ' · Internetverbindung prüfen.';
+
     $('status').classList.add('error');
   } finally {
-    refreshing=false;
+    refreshing = false;
   }
 }
 
 refresh();
-setInterval(refresh,REFRESH_MS);
+setInterval(refresh, REFRESH_MS);
+
 })();
+</script>
+
 </script>
 </body>
 </html>
