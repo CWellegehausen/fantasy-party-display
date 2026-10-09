@@ -354,23 +354,14 @@ async function loadProjections(season, week, seasonType) {
         return null;
       }
 
-      result[id] = {
-        ppr: readNumber(
-          stats.pts_ppr,
-          stats.pts_half_ppr,
-          stats.pts_std
-        ),
-        half: readNumber(
-          stats.pts_half_ppr,
-          stats.pts_ppr,
-          stats.pts_std
-        ),
-        standard: readNumber(
-          stats.pts_std,
-          stats.pts_half_ppr,
-          stats.pts_ppr
-        )
-      };
+    
+result[id] = {
+  ppr: readNumber(stats.pts_ppr),
+  half: readNumber(stats.pts_half_ppr),
+  standard: readNumber(stats.pts_std),
+  raw: stats
+};
+
 
       // Originalwerte zusätzlich behalten, falls nötig.
       result[id].raw = stats;
@@ -406,16 +397,15 @@ async function loadProjections(season, week, seasonType) {
 /*
  * Scoring-Modus aus den Ligaeinstellungen auswählen.
  */
+
 function getProjection(playerId, scoringSettings) {
   const p = projectionMap[String(playerId)];
   if (!p) return null;
 
-  const rec = Number(scoringSettings?.rec ?? 0);
+  // Liga ist PPR: ausschließlich PPR-Projektionen verwenden.
+  return p.ppr;
+}
 
-  if (rec >= 0.75) return p.ppr;
-  if (rec >= 0.25) return p.half;
-
-  return p.standard;
 }
 
 /*
