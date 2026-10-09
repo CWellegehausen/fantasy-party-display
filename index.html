@@ -362,21 +362,61 @@ async function loadProjections(season, week, seasonType) {
  * Scoring-Modus aus den Ligaeinstellungen auswählen.
  */
 
-function getProjection(p) {
-  const value = p?.stats?.pts_ppr;
-  return value != null && Number.isFinite(Number(value))
-    ? Number(value)
+function getProjection(playerId, settings = {}) {
+  const p = projectionMap[String(playerId)];
+  if (!p) return null;
+
+  // Deine Liga verwendet Full PPR.
+  const value = p.ppr;
+
+  return value != null && Number.isFinite(value)
+    ? value
     : null;
 }
-
-/*
+  
+  /*
  * Team-Endprognose:
  * aktuelle Punkte plus noch erwartete Punkte der Starter.
  *
  * Nicht verfügbare Projektionen werden nicht als null Punkte
  * ausgegeben. Die Vollständigkeit wird separat angezeigt.
  */
+
 function projectedTeamTotal(team, league) {
+  const current = getPoints(team);
+  const actual = team.players_points || {};
+  const starters = (team.starters || []).filter(
+    id => id !== null && id !== undefined && id !== ''
+  );
+
+  let remaining = 0;
+  let found = 0;
+  let missing = 0;
+
+  for (const id of starters) {
+    const projection = getProjection(id, league?.scoring_settings || {});
+
+    if (projection === null) {
+      missing++;
+      continue;
+    }
+
+    const scored = Number(actual[id] ?? 0);
+
+    remaining += Math.max(0, projection - scored);
+    found++;
+  }
+
+  return {
+    total: current + remaining,
+    current,
+    found,
+    missing,
+    starterCount: starters.length
+  };
+}
+
+(team, league) {
   const current = getPoints(team);
   const actual = team.players_points || {};
   const starters = (team.starters || []).filter(
