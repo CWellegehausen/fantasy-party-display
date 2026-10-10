@@ -198,18 +198,18 @@ main{max-width:1800px;margin:auto}.grid{display:grid;grid-template-columns:repea
     'schulzes special team': 'https://sleepercdn.com/uploads/17764319936c3a860704b73b61056ade.jpg',
     'saltcity reapers': 'https://sleepercdn.com/avatars/720818e7b3d31a7f675c975b9f8acabd',
     'othfresen calling': 'https://sleepercdn.com/avatars/eaa164fa102911e255f3c92b8a965cf4',
-    'raptors': 'raptors.jpg',
+    'rudis raptors': 'raptors.jpg',
     'the mightybear': 'https://sleepercdn.com/avatars/b232c62dc41d911d5c41d727f5c4c3ee',
     'running peter': 'https://sleepercdn.com/avatars/b2d03686b20a347bf6777a8b138684a0',
     'nightflyers': 'https://sleepercdn.com/uploads/078c946f0fbd579454dad5f503316011.jpg',
-    'king kobra': 'https://sleepercdn.com/uploads/ec71e53e5e5d9ea827e35de1ddbf876f',
+    'king cobras': 'https://sleepercdn.com/uploads/ec71e53e5e5d9ea827e35de1ddbf876f',
     'maxpower': 'https://sleepercdn.com/avatars/527d79b08cd88531d9899f7b10166711',
     'peace pipe': 'https://sleepercdn.com/avatars/a837d884740018795dcc751d0edb6232'
   };
   function teamLabelHtml(name) {
     const normalized = String(name || '').trim().toLowerCase().replace(/\s+/g, ' ');
     const logoUrl = TEAM_LOGOS[normalized] || Object.entries(TEAM_LOGOS).find(([key]) => normalized.includes(key) || key.includes(normalized))?.[1];
-    const logo = logoUrl ? `<img class="teamlogo" src="${logoUrl}" alt="" loading="eager" onerror="this.style.display='none'">` : '';
+    const logo = logoUrl ? `<img class="teamlogo" src="${logoUrl}" alt="" loading="eager" onerror="this.outerHTML=''">` : '';
     return `<div class="teamlabel">${logo}<div class="teamname">${esc(name)}</div></div>`;
   }
 
