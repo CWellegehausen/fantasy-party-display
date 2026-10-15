@@ -89,6 +89,7 @@ const EVENT_LIFETIME_MS=3*60*1000;
 const $=id=>document.getElementById(id);
 const fmt=n=>Number(n||0).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2});
 let projectionMap=Object.create(null);
+let projectionMetaMap=Object.create(null);
 let projectionMessage='Projektionen noch nicht geladen';
 let playerDirectoryCache=null;
 let nflTeamGameStates=Object.create(null);
@@ -138,6 +139,7 @@ const rows=Array.isArray(data)
 ?data.map(item=>[String(item?.player_id??item?.player?.player_id??''),item])
 :Object.entries(data||{}).map(([key,item])=>[String(item?.player_id??item?.player?.player_id??key),item]);
 const next=Object.create(null);
+const nextMeta=Object.create(null);
 for(const[rowId,item]of rows){
 if(!item||(item.category&&item.category!=='proj'))continue;
 const id=rowId;
@@ -151,9 +153,11 @@ return Number.isFinite(number)?number:null;
 const ppr=numberOrNull(stats?.pts_ppr);
 const half=numberOrNull(stats?.pts_half_ppr);
 const standard=numberOrNull(stats?.pts_std);
+nextMeta[id]={gameId:item.game_id??null,team:item.team??null,date:item.date??null};
 if(ppr!==null||half!==null||standard!==null)next[id]={ppr,half,standard};
 }
 projectionMap=next;
+projectionMetaMap=nextMeta;
 const count=Object.keys(next).length;
 projectionMessage=count?`Projektionen geladen (${count} Spieler)`:'Keine Punkteprojektionen gefunden';
 console.info('Sleeper-Projektionen:',count,'Spieler; Saison:',season,'Woche:',week);
@@ -178,9 +182,17 @@ const missingPlayers=[];
 for(const id of starters){
 const projection=getProjection(id,league);
 if(projection===null||!Number.isFinite(projection)){
+const key=String(id);
+const meta=projectionMetaMap[key];
+const player=playerDirectoryCache?.[key];
+const injuryStatus=String(player?.injuryStatus||'').toLowerCase();
+const playerStatus=String(player?.status||'').toLowerCase();
+const unavailable=/\b(out|injured reserve|ir|pup|suspended)\b/.test(injuryStatus)||/\b(inactive|injured reserve|suspended)\b/.test(playerStatus);
+// Kein game_id bedeutet in Sleeper-Projektionsdaten: für diese Woche ist kein Spiel angesetzt (Bye).
+// Explizit nicht verfügbare Spieler liefern ebenfalls kein Restpotenzial.
+if((meta&&meta.gameId==null)||unavailable){found++;continue;}
 missing++;
-const player=playerDirectoryCache?.[String(id)];
-missingPlayers.push(player?.name||String(id));
+missingPlayers.push(player?.name||key);
 continue;
 }
 const rawScored=Number(actual[id]??0);
@@ -264,7 +276,7 @@ if(!playerDirectoryPromise){
 playerDirectoryPromise=get('/players/nfl').then(data=>{
 const directory={};
 for(const[id,p]of Object.entries(data||{})){
-directory[id]={name:p.full_name||[p.first_name,p.last_name].filter(Boolean).join(' ')||'Unbekannter Spieler',team:p.team||'FA',position:p.position||''};
+directory[id]={name:p.full_name||[p.first_name,p.last_name].filter(Boolean).join(' ')||'Unbekannter Spieler',team:p.team||'FA',position:p.position||'',injuryStatus:p.injury_status||'',status:p.status||''};
 }
 playerDirectoryCache=directory;
 return directory;
