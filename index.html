@@ -89,6 +89,8 @@ const $=id=>document.getElementById(id);
 const fmt=n=>Number(n||0).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2});
 let projectionMap=Object.create(null);
 let projectionMessage='Projektionen noch nicht geladen';
+let playerDirectoryCache=null;
+let nflTeamGameStates=Object.create(null);
 let projectionKey='';
 let playerDirectoryPromise=null;
 let previousPlayerPoints=null;
@@ -176,6 +178,13 @@ const projection=getProjection(id,league);
 if(projection===null||!Number.isFinite(projection)){missing++;continue;}
 const rawScored=Number(actual[id]??0);
 const scored=Number.isFinite(rawScored)?rawScored:0;
+const nflTeam=playerDirectoryCache?.[String(id)]?.team;
+const gameState=nflTeam?nflTeamGameStates[String(nflTeam).toUpperCase()]:null;
+// Ein beendetes NFL-Spiel kann keine weiteren Fantasy-Punkte mehr liefern.
+if(gameState==='completed'){
+found++;
+continue;
+}
 remaining+=Math.max(0,projection-scored);
 found++;
 }
@@ -249,6 +258,7 @@ const directory={};
 for(const[id,p]of Object.entries(data||{})){
 directory[id]={name:p.full_name||[p.first_name,p.last_name].filter(Boolean).join(' ')||'Unbekannter Spieler',team:p.team||'FA',position:p.position||''};
 }
+playerDirectoryCache=directory;
 return directory;
 }).catch(error=>{playerDirectoryPromise=null;throw error;});
 }
@@ -324,6 +334,18 @@ const seasonType=Number(current?.season?.type)||2;
 const url=week?`https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?week=${week}&seasontype=${seasonType}&year=${season}`:'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard';
 const data=week?await getUrl(url):current;
 const events=Array.isArray(data?.events)?data.events:[];
+// Status je NFL-Team merken, damit beendete Spiele nicht weiter prognostiziert werden.
+const nextGameStates=Object.create(null);
+for(const event of events){
+const status=event?.status?.type;
+const state=status?.completed?'completed':status?.state==='in'?'in':status?.state==='pre'?'pre':null;
+if(!state)continue;
+for(const competitor of event?.competitions?.[0]?.competitors||[]){
+const abbreviation=competitor?.team?.abbreviation;
+if(abbreviation)nextGameStates[String(abbreviation).toUpperCase()]=state;
+}
+}
+nflTeamGameStates=nextGameStates;
 if(!events.length){
 ticker.innerHTML=`<div class="ticker-empty">NFL-Spieltag ${week||''} · Spielstände derzeit nicht verfügbar.</div>`;
 return;
@@ -359,6 +381,7 @@ const week=Number(state.display_week||state.week||1);
 const season=Number(league.season||state.league_season||state.season);
 const seasonType=league.season_type||state.season_type||'regular';
 await loadProjections(season,week,seasonType);
+try{await getPlayerDirectory();}catch(error){console.warn('Spielerverzeichnis für Prognosen nicht verfügbar:',error);}
 const matches=await get('/league/'+LEAGUE_ID+'/matchups/'+week);
 const userById=Object.fromEntries(users.map(u=>[u.user_id,u]));
 const names={};
