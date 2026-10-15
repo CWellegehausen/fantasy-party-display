@@ -61,7 +61,7 @@ main{width:100%;max-width:none;margin:0;flex:1 1 auto;min-height:0}
 .ticker-empty{padding:8px 12px;color:var(--muted);font-size:11px}
 footer{width:100%;max-width:none;margin:6px 0 0;display:flex;justify-content:space-between;gap:12px;color:#73819a;font-size:10px;flex-shrink:0}
 .error{color:#ff9c9c}
-</style>
+ .projection-debug{margin-top:4px;font-size:10px;color:var(--muted)}.projection-debug summary{cursor:pointer}.debug-table-wrap{max-height:180px;overflow:auto}.debug-table-wrap table{border-collapse:collapse;width:100%;font-size:10px}.debug-table-wrap th,.debug-table-wrap td{padding:2px 4px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}.debug-table-wrap th:first-child,.debug-table-wrap td:first-child{text-align:left}.debug-table-wrap p{margin:4px 0}</style>
 </head>
 <body>
 <div id="stage">
@@ -171,20 +171,26 @@ function projectedTeamTotal(team,league){
 const actual=team?.players_points||{};
 const starters=(team?.starters||[]).filter(id=>id!==null&&id!==undefined&&id!==''&&id!=='0');
 let total=0,found=0,missing=0;
-const missingPlayers=[];
+const missingPlayers=[],details=[];
 for(const id of starters){
 const projection=getProjection(id,league);
-if(projection===null||!Number.isFinite(projection)){
-missing++;
-missingPlayers.push(playerDirectoryCache?.[String(id)]?.name||String(id));
-continue;
-}
+const name=playerDirectoryCache?.[String(id)]?.name||String(id);
 const rawScored=Number(actual[id]??0);
 const scored=Number.isFinite(rawScored)?rawScored:0;
-total+=Math.max(projection,scored);
-found++;
+if(projection===null||!Number.isFinite(projection)){
+missing++; missingPlayers.push(name);
+details.push({name,id,projection:null,actual:scored,contribution:null});
+continue;
 }
-return{total:missing===0&&found>0?total:null,found,missing,missingPlayers,starterCount:starters.length};
+const contribution=Math.max(projection,scored);
+total+=contribution; found++;
+details.push({name,id,projection,actual:scored,contribution});
+}
+return{total:missing===0&&found>0?total:null,found,missing,missingPlayers,starterCount:starters.length,details};
+}
+function projectionDebugHtml(result){
+const rows=result.details.map(p=>`<tr><td>${esc(p.name)}</td><td>${esc(p.id)}</td><td>${p.projection===null?'FEHLT':fmt(p.projection)}</td><td>${fmt(p.actual)}</td><td>${p.contribution===null?'—':fmt(p.contribution)}</td></tr>`).join('');
+return `<details class="projection-debug"><summary>Prognose prüfen · Einzelspieler</summary><div class="debug-table-wrap"><table><thead><tr><th>Spieler</th><th>ID</th><th>Prognose</th><th>Ist-Punkte</th><th>Beitrag</th></tr></thead><tbody>${rows}</tbody></table><p>Summe intern: ${result.total===null?'unvollständig':fmt(result.total)} · ${result.found}/${result.starterCount} Starter</p></div></details>`;
 }
 function estimatedWinChance(a,b){return 100/(1+Math.exp(-(a-b)/12));}
 function statsHtml(team,opponent,league){
@@ -195,7 +201,7 @@ const chance=complete?Math.round(estimatedWinChance(a.total,b.total)):null;
 const coverage=a.starterCount?`${a.found}/${a.starterCount} Starter`:'Keine Starter';
 const missingNote=a.missing?`<div class="subnote missing-note" title="${esc(a.missingPlayers.join(', '))}">Ohne Projektion: ${esc(a.missingPlayers.join(', '))}</div>`:'';
 return `<div class="teamstats">
-<span>Prognose <strong>${a.total===null?'—':fmt(a.total)}</strong><div class="subnote">Sleeper-Logik · ${coverage}${a.missing?' · unvollständig':''}</div>${missingNote}</span>
+<span>Prognose <strong>${a.total===null?'—':fmt(a.total)}</strong><div class="subnote">Sleeper-Logik · ${coverage}${a.missing?' · unvollständig':''}</div>${missingNote}${projectionDebugHtml(a)}</span>
 <span class="winchance">Siegchance <strong>${chance===null?'—':chance+' %'}</strong><div class="subnote">${chance===null?'Prognosen unvollständig':'Eigene Schätzung'}</div></span>
 </div>`;
 }
