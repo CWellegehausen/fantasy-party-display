@@ -132,32 +132,20 @@ if(key===projectionKey&&Object.keys(projectionMap).length)return;
 projectionKey=key;
 projectionMap=Object.create(null);
 projectionMessage='Projektionen werden geladen …';
-const url=`${PROJECTION_API}/projections/nfl/${season}/${week}?season_type=${encodeURIComponent(type)}`;
+const url=`${PROJECTION_API}/projections/nfl/${type}/${season}/${week}`;
 try{
 const data=await getUrl(url);
-const rows=Array.isArray(data)
-?data.map(item=>[String(item?.player_id??item?.player?.player_id??''),item])
-:Object.entries(data||{}).map(([key,item])=>[String(item?.player_id??item?.player?.player_id??key),item]);
+const rows=Array.isArray(data)?data.map(item=>[String(item?.player_id??item?.player?.player_id??''),item]):Object.entries(data||{}).map(([key,item])=>[String(item?.player_id??item?.player?.player_id??key),item]);
 const next=Object.create(null);
-const nextMeta=Object.create(null);
 for(const[rowId,item]of rows){
 if(!item||(item.category&&item.category!=='proj'))continue;
 const id=rowId;
 if(!id)continue;
 const stats=item.stats??item.projection??item;
-const numberOrNull=value=>{
-if(value===null||value===undefined||value==='')return null;
-const number=Number(value);
-return Number.isFinite(number)?number:null;
-};
-const ppr=numberOrNull(stats?.pts_ppr);
-const half=numberOrNull(stats?.pts_half_ppr);
-const standard=numberOrNull(stats?.pts_std);
-nextMeta[id]={gameId:item.game_id??null,team:item.team??null,date:item.date??null};
-if(ppr!==null||half!==null||standard!==null)next[id]={ppr,half,standard};
+if(stats&&typeof stats==='object')next[id]=stats;
 }
 projectionMap=next;
-projectionMetaMap=nextMeta;
+projectionMetaMap=Object.create(null);
 const count=Object.keys(next).length;
 projectionMessage=count?`Projektionen geladen (${count} Spieler)`:'Keine Punkteprojektionen gefunden';
 console.info('Sleeper-Projektionen:',count,'Spieler; Saison:',season,'Woche:',week);
@@ -168,57 +156,46 @@ projectionMessage='Projektionen konnten nicht geladen werden';
 }
 
 function getProjection(playerId,league){
-const projection=projectionMap[String(playerId)];
-if(!projection)return null;
-const value=projection[scoringMode(league)];
-return value!==null&&value!==undefined&&Number.isFinite(value)?value:null;
+const stats=projectionMap[String(playerId)];
+if(!stats)return null;
+const scoring=league?.scoring_settings||{};
+const weighted=Object.entries(scoring).filter(([key,value])=>typeof value==='number'&&typeof stats[key]==='number');
+if(weighted.length){
+const total=weighted.reduce((sum,[key,value])=>sum+stats[key]*value,0);
+return Number.isFinite(total)?total:null;
+}
+const fallback=stats.pts_ppr;
+return typeof fallback==='number'&&Number.isFinite(fallback)?fallback:null;
 }
 function projectedTeamTotal(team,league){
-const current=getPoints(team);
 const actual=team?.players_points||{};
-const starters=(team?.starters||[]).filter(id=>id!==null&&id!==undefined&&id!=='');
-let remaining=0,found=0,missing=0;
+const starters=(team?.starters||[]).filter(id=>id!==null&&id!==undefined&&id!==''&&id!=='0');
+let total=0,found=0,missing=0;
 const missingPlayers=[];
 for(const id of starters){
 const projection=getProjection(id,league);
 if(projection===null||!Number.isFinite(projection)){
-const key=String(id);
-const meta=projectionMetaMap[key];
-const player=playerDirectoryCache?.[key];
-const injuryStatus=String(player?.injuryStatus||'').toLowerCase();
-const playerStatus=String(player?.status||'').toLowerCase();
-const unavailable=/\b(out|injured reserve|ir|pup|suspended)\b/.test(injuryStatus)||/\b(inactive|injured reserve|suspended)\b/.test(playerStatus);
-// Kein game_id bedeutet in Sleeper-Projektionsdaten: für diese Woche ist kein Spiel angesetzt (Bye).
-// Explizit nicht verfügbare Spieler liefern ebenfalls kein Restpotenzial.
-if((meta&&meta.gameId==null)||unavailable){found++;continue;}
 missing++;
-missingPlayers.push(player?.name||key);
+missingPlayers.push(playerDirectoryCache?.[String(id)]?.name||String(id));
 continue;
 }
 const rawScored=Number(actual[id]??0);
 const scored=Number.isFinite(rawScored)?rawScored:0;
-const nflTeam=playerDirectoryCache?.[String(id)]?.team;
-const gameState=nflTeam?nflTeamGameStates[String(nflTeam).toUpperCase()]:null;
-// Ein beendetes NFL-Spiel kann keine weiteren Fantasy-Punkte mehr liefern.
-if(gameState==='completed'){
-found++;
-continue;
-}
-remaining+=Math.max(0,projection-scored);
+total+=Math.max(projection,scored);
 found++;
 }
-return{total:current+remaining,current,remaining,found,missing,missingPlayers,starterCount:starters.length};
+return{total:missing===0&&found>0?total:null,found,missing,missingPlayers,starterCount:starters.length};
 }
 function estimatedWinChance(a,b){return 100/(1+Math.exp(-(a-b)/12));}
 function statsHtml(team,opponent,league){
 const a=projectedTeamTotal(team,league);
 const b=projectedTeamTotal(opponent,league);
-const complete=a.missing===0&&b.missing===0&&a.found>0&&b.found>0;
+const complete=a.total!==null&&b.total!==null;
 const chance=complete?Math.round(estimatedWinChance(a.total,b.total)):null;
 const coverage=a.starterCount?`${a.found}/${a.starterCount} Starter`:'Keine Starter';
 const missingNote=a.missing?`<div class="subnote missing-note" title="${esc(a.missingPlayers.join(', '))}">Ohne Projektion: ${esc(a.missingPlayers.join(', '))}</div>`:'';
 return `<div class="teamstats">
-<span>Prognose <strong>${a.found?fmt(a.total):'—'}</strong><div class="subnote">Eigene Schätzung · ${coverage}${a.missing?' · unvollständig':''}</div>${missingNote}</span>
+<span>Prognose <strong>${a.total===null?'—':fmt(a.total)}</strong><div class="subnote">Sleeper-Logik · ${coverage}${a.missing?' · unvollständig':''}</div>${missingNote}</span>
 <span class="winchance">Siegchance <strong>${chance===null?'—':chance+' %'}</strong><div class="subnote">${chance===null?'Prognosen unvollständig':'Eigene Schätzung'}</div></span>
 </div>`;
 }
