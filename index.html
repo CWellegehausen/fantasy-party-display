@@ -138,7 +138,7 @@ const data=await getUrl(url);
 const rows=Array.isArray(data)?data.map(item=>[String(item?.player_id??item?.player?.player_id??''),item]):Object.entries(data||{}).map(([key,item])=>[String(item?.player_id??item?.player?.player_id??key),item]);
 const next=Object.create(null);
 for(const[rowId,item]of rows){
-if(!item||(item.category&&item.category!=='proj'))continue;
+if(!item)continue;
 const id=rowId;
 if(!id)continue;
 const stats=item.stats??item.projection??item;
@@ -159,7 +159,7 @@ function getProjection(playerId,league){
 const stats=projectionMap[String(playerId)];
 if(!stats)return null;
 const scoring=league?.scoring_settings||{};
-const weighted=Object.entries(scoring).filter(([key,value])=>typeof value==='number'&&typeof stats[key]==='number');
+const weighted=Object.entries(scoring).filter(([key])=>typeof stats[key]==='number');
 if(weighted.length){
 const total=weighted.reduce((sum,[key,value])=>sum+stats[key]*value,0);
 return Number.isFinite(total)?total:null;
