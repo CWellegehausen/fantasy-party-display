@@ -174,9 +174,15 @@ const current=getPoints(team);
 const actual=team?.players_points||{};
 const starters=(team?.starters||[]).filter(id=>id!==null&&id!==undefined&&id!=='');
 let remaining=0,found=0,missing=0;
+const missingPlayers=[];
 for(const id of starters){
 const projection=getProjection(id,league);
-if(projection===null||!Number.isFinite(projection)){missing++;continue;}
+if(projection===null||!Number.isFinite(projection)){
+missing++;
+const player=playerDirectoryCache?.[String(id)];
+missingPlayers.push(player?.name||String(id));
+continue;
+}
 const rawScored=Number(actual[id]??0);
 const scored=Number.isFinite(rawScored)?rawScored:0;
 const nflTeam=playerDirectoryCache?.[String(id)]?.team;
@@ -189,7 +195,7 @@ continue;
 remaining+=Math.max(0,projection-scored);
 found++;
 }
-return{total:current+remaining,current,remaining,found,missing,starterCount:starters.length};
+return{total:current+remaining,current,remaining,found,missing,missingPlayers,starterCount:starters.length};
 }
 function estimatedWinChance(a,b){return 100/(1+Math.exp(-(a-b)/12));}
 function statsHtml(team,opponent,league){
@@ -198,8 +204,9 @@ const b=projectedTeamTotal(opponent,league);
 const complete=a.missing===0&&b.missing===0&&a.found>0&&b.found>0;
 const chance=complete?Math.round(estimatedWinChance(a.total,b.total)):null;
 const coverage=a.starterCount?`${a.found}/${a.starterCount} Starter`:'Keine Starter';
+const missingNote=a.missing?`<div class="subnote missing-note" title="${esc(a.missingPlayers.join(', '))}">Ohne Projektion: ${esc(a.missingPlayers.join(', '))}</div>`:'';
 return `<div class="teamstats">
-<span>Prognose <strong>${a.found?fmt(a.total):'—'}</strong><div class="subnote">Eigene Schätzung · ${coverage}${a.missing?' · unvollständig':''}</div></span>
+<span>Prognose <strong>${a.found?fmt(a.total):'—'}</strong><div class="subnote">Eigene Schätzung · ${coverage}${a.missing?' · unvollständig':''}</div>${missingNote}</span>
 <span class="winchance">Siegchance <strong>${chance===null?'—':chance+' %'}</strong><div class="subnote">${chance===null?'Prognosen unvollständig':'Eigene Schätzung'}</div></span>
 </div>`;
 }
