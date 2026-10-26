@@ -97,10 +97,31 @@ footer{width:100%;max-width:none;margin:6px 0 0;display:flex;justify-content:spa
 <body>
 <div id="stage">
 <header>
-<div>
-<div class="eyebrow">Sleeper · Fantasy Football</div>
-<h1>LEAGUE MATCHUPS</h1>
-<div class="sub" id="leagueName">Punkte live aus eurer Liga</div>
+  .brandline{
+  display:flex;
+  align-items:baseline;
+  gap:18px;
+  min-width:0;
+  flex-wrap:nowrap;
+}
+.brandline .eyebrow{
+  white-space:nowrap;
+  letter-spacing:.12em;
+}
+.brandline h1{
+  white-space:nowrap;
+  font-size:28px;
+  margin:0;
+}
+.brandline .sub{
+  white-space:nowrap;
+  margin:0;
+  font-size:12px;
+}
+<div class="brandline">
+  <span class="eyebrow">Sleeper · Fantasy Football</span>
+  <h1>LEAGUE MATCHUPS</h1>
+  <span class="sub" id="leagueName">OFF-LIGA</span>
 </div>
 <div class="right">
 <div class="week" id="weekLabel">WEEK —</div>
@@ -453,12 +474,8 @@ function matchupPlayersHtml(a,b,league){
   `).join('');
 
   return `<div class="starter-table">
-    <div class="starter-head">
-      <span>Spieler · Live / Prognose</span>
-      <span>Spieler · Live / Prognose</span>
-    </div>
-    ${rows}
-  </div>`;
+  ${rows}
+</div>`;
 }
 
 function renderMatchups(matches,names,week,league){
