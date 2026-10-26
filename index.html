@@ -323,7 +323,12 @@ function projectedTeamTotal(team,league){
       continue;
     }
 
-    const contribution=Math.max(projection,scored);
+   const nflTeam = playerDirectoryCache?.[String(id)]?.team;
+const gameState = nflTeamGameStates[String(nflTeam || '').toUpperCase()];
+
+const contribution = gameState === 'completed'
+  ? scored
+  : Math.max(projection, scored);
     total+=contribution;
     found++;
 
