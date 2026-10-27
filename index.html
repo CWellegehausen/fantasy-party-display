@@ -218,7 +218,6 @@ const API='https://api.sleeper.app/v1';
 const PROJECTION_API='https://api.sleeper.app/v1';
 const REFRESH_MS=5000;
 const MAX_EVENTS=10;
-const EVENT_LIFETIME_MS=3*60*1000;
 
 const $=id=>document.getElementById(id);
 const fmt=n=>Number(n||0).toLocaleString('de-DE',{
@@ -606,7 +605,7 @@ function renderMatchups(matches,names,week,league){
       <span class="live"><i class="dot"></i> LIVE</span>
     </div>
     <div class="score-subtitle">
-      Punkteanstieg seit der letzten Abfrage · letzte 3 Minuten
+      Die letzten 10 erkannten Punkteanstiege
     </div>
     <div class="scoring-list" id="scoringList">
       <div class="no-events">Warte auf neue Punkte …</div>
@@ -710,16 +709,12 @@ async function updateScoring(matches,week){
     }
   }
 
-  scoringEvents=scoringEvents.filter(e=>now-e.time<EVENT_LIFETIME_MS);
   renderScoring();
 }
 
 function renderScoring(){
   const list=$('scoringList');
   if(!list)return;
-
-  const now=Date.now();
-  scoringEvents=scoringEvents.filter(e=>now-e.time<EVENT_LIFETIME_MS);
 
   if(!scoringEvents.length){
     list.innerHTML='<div class="no-events">Noch keine neuen Punkte erkannt.<br>Neue Punktesteigerungen erscheinen hier.</div>';
