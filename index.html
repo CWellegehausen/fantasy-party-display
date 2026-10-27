@@ -171,6 +171,17 @@ header{background:#0b1712!important;border-bottom:1px solid #c6a75e!important;co
 .nfl-ticker{background:#0b1712!important;border-color:#42604f!important;color:#f4f4ee!important}
 footer{color:#b9c5bd!important;text-shadow:none!important}
 
+
+/* Layout-Korrekturen: DEF/Positionen innerhalb der Karten halten und Prognosebereich kompakter */
+.match-teams,.match-side,.starter-table,.starter-head,.starter-row,.starter-player{min-width:0;max-width:100%;box-sizing:border-box}
+.starter-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:4px}
+.starter-player{grid-template-columns:20px minmax(0,1fr) auto;gap:2px;overflow:hidden}
+.starter-slot{min-width:0;max-width:20px;font-size:7px;letter-spacing:-.03em;text-overflow:clip;white-space:nowrap}
+.starter-name{min-width:0}
+.starter-points{font-size:8px}
+.teamstats{gap:2px 5px;padding:1px 0}
+.winchance{white-space:nowrap}
+
 </style>
 </head>
 
