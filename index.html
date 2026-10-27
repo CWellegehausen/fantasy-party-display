@@ -605,7 +605,7 @@ function renderMatchups(matches,names,week,league){
       <span class="live"><i class="dot"></i> LIVE</span>
     </div>
     <div class="score-subtitle">
-      Die letzten 10 erkannten Punkteanstiege
+      Letzte 10 Scorer · Live-Punkte und Veränderung
     </div>
     <div class="scoring-list" id="scoringList">
       <div class="no-events">Warte auf neue Punkte …</div>
@@ -683,30 +683,50 @@ async function updateScoring(matches,week){
 
   previousPlayerPoints=current;
 
-  if(changes.length){
-    try{
-      const directory=await getPlayerDirectory();
+  try{
+    const directory=await getPlayerDirectory();
 
-      for(const change of changes){
-        const player=directory[change.playerId]||{
-          name:'Spieler '+change.playerId,
-          team:'—',
-          position:''
-        };
+    // Die Live-Punktzahl aller bereits gelisteten Spieler bleibt aktuell.
+    for(const event of scoringEvents){
+      if(Object.prototype.hasOwnProperty.call(current,event.playerId)){
+        event.total=current[event.playerId];
+      }
+    }
 
+    // Pro Spieler bleibt ein Eintrag erhalten; bei einem neuen Punkteanstieg
+    // wird dessen Veränderung aktualisiert und der Spieler nach vorn sortiert.
+    for(const change of changes){
+      const player=directory[change.playerId]||{
+        name:'Spieler '+change.playerId,
+        team:'—',
+        position:''
+      };
+      const existing=scoringEvents.find(
+        event=>String(event.playerId)===String(change.playerId)
+      );
+
+      if(existing){
+        existing.delta=change.delta;
+        existing.total=current[change.playerId]??change.total;
+        existing.time=change.time;
+        existing.name=player.name;
+        existing.nflTeam=player.team;
+        existing.position=player.position;
+      }else{
         scoringEvents.push({
           ...change,
+          total:current[change.playerId]??change.total,
           name:player.name,
           nflTeam:player.team,
           position:player.position
         });
       }
-
-      scoringEvents.sort((a,b)=>b.time-a.time);
-      scoringEvents=scoringEvents.slice(0,MAX_EVENTS);
-    }catch(error){
-      console.warn('Spielernamen konnten nicht geladen werden:',error);
     }
+
+    scoringEvents.sort((a,b)=>b.time-a.time);
+    scoringEvents=scoringEvents.slice(0,MAX_EVENTS);
+  }catch(error){
+    console.warn('Spielernamen konnten nicht geladen werden:',error);
   }
 
   renderScoring();
@@ -728,7 +748,7 @@ function renderScoring(){
         <div class="event-meta">${esc(e.nflTeam)}${e.position?' · '+esc(e.position):''}</div>
       </div>
       <div class="event-points">
-        <div class="event-delta">+${fmt(e.delta)}</div>
+        <div class="event-delta">+${fmt(e.delta)} zuletzt</div>
         <div class="event-total">${fmt(e.total)} Pkt.</div>
       </div>
     </div>
