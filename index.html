@@ -4,25 +4,27 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>Fantasy Football · Partyraum</title>
+<title>Schulzes Special Team · Trinkhalle</title>
 <!-- Deployment refresh: 2026-10-26 -->
 <style>
-:root{--bg:#090d15;--panel:#131a27;--panel2:#192235;--line:#29354a;--muted:#a8b4c8;--text:#f4f7fc;--accent:#a7f36b;--blue:#79b8ff;--gold:#ffd36a}
+:root{--bg:#080f0b;--panel:#101b14;--panel2:#17261c;--line:#2d4935;--muted:#b0c1b4;--text:#f4f8f4;--accent:#a7f36b;--blue:#c2d7c7;--gold:#ffd36a}
 *{box-sizing:border-box}
 html,body{width:100%;height:100%;min-height:0;margin:0;padding:0;overflow:hidden;background:#000;color:var(--text);font-family:Arial,Helvetica,sans-serif}
 body{position:relative;display:block}
-#stage{position:absolute;left:0;top:0;width:1280px;height:720px;box-sizing:border-box;transform-origin:top left;overflow:hidden;display:flex;flex-direction:column;padding:12px;background:radial-gradient(ellipse at 50% -20%,#263957 0%,var(--bg) 60%)}
+#stage{position:absolute;left:0;top:0;width:1280px;height:720px;box-sizing:border-box;transform-origin:top left;overflow:hidden;display:flex;flex-direction:column;padding:12px;background:radial-gradient(ellipse at 50% -20%,#294633 0%,var(--bg) 62%)}
 
-header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 0 8px;width:100%;max-width:none;border-bottom:1px solid var(--line);padding-bottom:6px;flex-shrink:0}
+header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 0 8px;width:100%;max-width:none;border-bottom:2px solid #42654a;padding-bottom:6px;flex-shrink:0}
 
 .brandline{
   display:flex;
   align-items:center;
-  gap:18px;
+  gap:14px;
   min-width:0;
   flex:1;
   white-space:nowrap;
 }
+.brand-copy{display:flex;align-items:baseline;gap:14px;min-width:0;white-space:nowrap}
+.brandline .franchise-logo,.brandline .trinkhalle-logo{width:54px;height:54px;object-fit:contain;flex:0 0 auto;border-radius:10px;background:#f4f8f4;padding:4px;border:1px solid #42654a}
 .brandline .eyebrow{
   letter-spacing:.12em;
   flex-shrink:0;
@@ -128,9 +130,9 @@ footer{width:100%;max-width:none;margin:6px 0 0;display:flex;justify-content:spa
 
 <header>
   <div class="brandline">
-    <span class="eyebrow">Sleeper · Fantasy Football</span>
-    <h1>LEAGUE MATCHUPS</h1>
-    <span class="sub" id="leagueName">OFF-LIGA</span>
+    <img class="franchise-logo" src="https://sleepercdn.com/uploads/17764319936c3a860704b73b61056ade.jpg" alt="Schulzes Special Team Logo">
+    <img class="trinkhalle-logo" src="https://raw.githubusercontent.com/CWellegehausen/fantasy-party-display/main/Logo%20Trinkhalle.png" alt="Trinkhalle Logo">
+    <div class="brand-copy"><span class="eyebrow">SCHULZES SPECIAL TEAM · TRINKHALLE</span><h1>GAME DAY</h1><span class="sub" id="leagueName">OFF-LIGA</span></div>
   </div>
   <div class="right">
     <div class="week" id="weekLabel">WEEK —</div>
